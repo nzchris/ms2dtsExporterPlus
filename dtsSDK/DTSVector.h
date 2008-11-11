@@ -71,7 +71,8 @@ namespace DTS
             return false ;
          }
          friend bool operator >  (const Vector<type,size> &a, const Vector<type,size> &b) {
-            for (int n = 0 ; n < size ; n++) if (a.members[n] < b.members[n]) return false ;
+            int n;
+            for (n = 0 ; n < size ; n++) if (a.members[n] < b.members[n]) return false ;
             return a[n] != b[n] ;
          }
          friend bool operator == (const Vector<type,size> &a, const Vector<type,size> &b) {
@@ -236,3 +237,4 @@ namespace DTS
 }
 
 #endif
+

@@ -10,7 +10,7 @@
 // until the tsshape is finally created in generateShape().
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "ShapeMimic.h"
@@ -18,6 +18,7 @@
 #include "translucentSort.h"
 #include "nvStripWrap.h"
 #include "stripper.h"
+#include "DTSDecimator.h"
 
 // See comment in dtsBitMatrix.h for why we don't use this.
 // #define USE_NVIDIA_STRIPPER
@@ -53,33 +54,38 @@ Shape * ShapeMimic::generateShape()
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return NULL;
+   if (AppConfig::IsExportError()) return NULL;
 
    // this may be our second time around, make sure
    // certain variables and lists are initialized:
    nodes.clear();
 
    // cull as needed
+	AppConfig::SetProgress(0.0f, 0.0f, "Collapsing transforms...");
    collapseTransforms();
 
    // no frills construction
    Shape * shape = new Shape;
 
    // step one:    generate bounds
+	AppConfig::SetProgress(0.0f, 0.07f, "Generating bounds...");
    generateBounds(shape);
 
    // step two:    generate detail levels sort subTrees according to dl
+	AppConfig::SetProgress(0.0f, 0.14f, "Generating detail levels...");
    generateDetails(shape);
 
    // step three:  generate subTrees (tree structure w/o objects connected)
+	AppConfig::SetProgress(0.0f, 0.21f, "Generating subtrees...");
    generateSubtrees(shape);
 
    // step four:   generate objects -- hook up to nodes
+	AppConfig::SetProgress(0.0f, 0.28f, "Generating objects...");
    generateObjects(shape);
    
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
 
    // at this point, we have a shape with all the details,
    // nodes, and objects set up.  We have also added a bunch 
@@ -87,57 +93,70 @@ Shape * ShapeMimic::generateShape()
    // the meshes list is set up.
 
    // step five:   set default states (including mesh data)
+	AppConfig::SetProgress(0.0f, 0.35f, "Generating default states...");
    generateDefaultStates(shape);
 
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
    // step six:    generate ifl materials
+	AppConfig::SetProgress(0.0f, 0.42f, "Generating Ifl materials...");
    generateIflMaterials(shape);
 
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
    // step seven:  animation
    if (AppConfig::GetEnableSequences())
+	{
+		AppConfig::SetProgress(0.0f, 0.49f, "Generating sequences...");
        generateSequences(shape);
+	}
        
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
    // step eight:  generate material list
+	AppConfig::SetProgress(0.0f, 0.56f, "Generating material list...");
    generateMaterialList(shape);
 
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
    // step eight:  generate the skins    
+	AppConfig::SetProgress(0.0f, 0.63f, "Generating skins...");
    generateSkins(shape);
    
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
-   // step nine:   optimize the meshes (but only if exporting them)
-   if (AppConfig::GetExportOptimized())
-      optimizeMeshes(shape);
+   // step nine:   prepare meshes for export (including optimization if enabled)
+   AppConfig::SetProgress(0.0f, 0.71f, "Preparing meshes...");
+   prepareMeshesForExport(shape);
 
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return shape;
+   if (AppConfig::IsExportError()) return shape;
    
    // step ten:    convert sortObjects
+	AppConfig::SetProgress(0.0f, 0.78f, "Converting sort objects...");
    convertSortObjects(shape);
 
+	AppConfig::SetProgress(0.0f, 0.85f, "Initiating shapes...");
    initShape(shape);
 
-   if (!isError())
+   if (!AppConfig::IsExportError())
+	{
+		AppConfig::SetProgress(0.0f, 0.92f, "Dumping shape...");
       dumpShape(shape);
+	}
 
+	AppConfig::SetProgress(0.0f, 1.0f, "Conversion complete.");
    return shape;
 }
 
@@ -203,12 +222,12 @@ void ShapeMimic::generateBounds(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppMesh * boundsMesh = boundsNode->getNumMesh() ? boundsNode->getMesh(0) : NULL;
    if (!boundsMesh)
    {
-      setExportError("Bounds node has no mesh.");
+      AppConfig::SetExportError("12", "Bounds node has no mesh.");
       return;
    }
 
@@ -237,12 +256,12 @@ void ShapeMimic::generateDetails(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // if nothing to export...
    if (subtrees.empty())
    {
-       setExportError("Nothing to export.");
+       AppConfig::SetExportError("1", "Nothing to export.");
        return;
    }
 
@@ -252,6 +271,8 @@ void ShapeMimic::generateDetails(Shape * shape)
    S32 i,j;
    for (i=0; i<subtrees.size(); i++)
    {
+		AppConfig::SetProgress((F32)i / (F32)subtrees.size(), 0.14f, "Generating detail levels...");
+
       Subtree * subtree = subtrees[i];
       for (j=0; j<subtree->validDetails.size(); j++)
       {
@@ -263,7 +284,7 @@ void ShapeMimic::generateDetails(Shape * shape)
          detail.maxError = -1;
          detail.polyCount = 0; // not currently using this
          detail.name = addName(subtree->detailNames[j],shape);
-         if (!strnicmp(subtree->detailNames[j],"BB::",4))
+         if( subtree->detailNodes[j]->isBillboard() )
             generateBillboardDetail(subtree->detailNodes[j],detail);
          shape->detailLevels.push_back(detail);
       }
@@ -277,7 +298,7 @@ void ShapeMimic::generateBillboardDetail(AppNode * detailNode, DetailLevel & det
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // this is a billboard detail, this works a little differently...
    detail.subshape = -1;
@@ -292,7 +313,7 @@ void ShapeMimic::generateBillboardDetail(AppNode * detailNode, DetailLevel & det
 
    detailNode->getInt("BB::EQUATOR_STEPS",numEquatorSteps);
    detailNode->getInt("BB::POLAR_STEPS",numPolarSteps);
-   polarAngle = M_PI/(F32)(((numPolarSteps>>1)<<1)+5);
+   polarAngle = F32(M_PI)/(F32)(((numPolarSteps>>1)<<1)+5);
    detailNode->getFloat("BB::POLAR_ANGLE",polarAngle);
    detailNode->getInt("BB::DL",dl);
    detailNode->getInt("BB::DIM",dim);
@@ -316,7 +337,7 @@ S32 __cdecl compareTSDetails( void const *e1, void const *e2 )
 
    if (d1->size > d2->size)
       return -1;
-   if (d2->size > d1->size)
+   if (d1->size < d2->size)
       return 1;
 
    return 0;
@@ -332,9 +353,8 @@ void ShapeMimic::sortTSDetails(std::vector<DetailLevel> & details)
 //
 //-----------------------------------------------------------
 
-S32 ShapeMimic::addFaceMaterial(AppMesh * mesh,S32 faceNum)
+S32 ShapeMimic::addFaceMaterial(AppMesh * mesh,S32 matIdx)
 {
-   S32 matIdx = mesh->getFaceMaterial(faceNum);
    Material mat;
    if (!mesh->getMaterial(matIdx, mat, 0))
       // code no material as -1...
@@ -450,7 +470,7 @@ void ShapeMimic::addNodeRotation(NodeMimic * curNode, const AppTime & time, Shap
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDNodeStates,avar("Adding%snode rotation at time %s for node \"%s\".\r\n",
         blend ? " blend " : " ", time.getStr(), curNode->appNode->getName()));
@@ -470,7 +490,7 @@ void ShapeMimic::addNodeTranslation(NodeMimic * curNode, const AppTime & time, S
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDNodeStates,avar("Adding%snode translation at time %s for node \"%s\".\r\n",
        blend ? " blend " : " ", time.getStr(), curNode->appNode->getName()));
@@ -490,7 +510,7 @@ void ShapeMimic::addNodeUniformScale(NodeMimic * curNode, const AppTime & time, 
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDNodeStates,avar("Adding%snode scale at time %s for node \"%s\".\r\n",
        blend ? " blend " : " ", time.getStr(), curNode->appNode->getName()));
@@ -506,7 +526,7 @@ void ShapeMimic::addNodeAlignedScale(NodeMimic * curNode, const AppTime & time, 
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDNodeStates,avar("Adding%snode scale at time %s for node \"%s\".\r\n",
         blend ? " blend " : " ", time.getStr(), curNode->appNode->getName()));
@@ -522,7 +542,7 @@ void ShapeMimic::addNodeArbitraryScale(NodeMimic * curNode, const AppTime & time
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDNodeStates,avar("Adding%snode scale at time %s for node \"%s\".\r\n",
         blend ? " blend " : " ", time.getStr(), curNode->appNode->getName()));
@@ -551,18 +571,20 @@ void ShapeMimic::generateSubtrees(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // this should already have been caught, but...
    if (subtrees.empty())
    {
-      setExportError("Nothing to export.");
+      AppConfig::SetExportError("1", "Nothing to export.");
       return;
    }
 
    // generate a set of nodes for each subtree
    for (S32 i=0; i<subtrees.size(); i++)
    {
+		AppConfig::SetProgress((F32)i / (F32)subtrees.size(), 0.21f, "Generating subtrees...");
+
       Subtree * subtree = subtrees[i];
       subtree->start.number = -1;  // translates to NULL...
                                    // this means branches will have no parent
@@ -618,7 +640,7 @@ void ShapeMimic::collapseTransforms()
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDPass3,"\r\nThird pass:  Collapsing unneeded nodes...\r\n\r\n");
 
@@ -628,6 +650,8 @@ void ShapeMimic::collapseTransforms()
    Subtree * subtree;
    for (S32 i=0; i<subtrees.size(); i++)
    {
+		AppConfig::SetProgress((F32)i / (F32)subtrees.size(), 0.0f, "Collapsing transforms...");
+
       subtree = subtrees[i];
       NodeMimic * mimicNode = subtree->start.child;
       while (mimicNode)
@@ -635,7 +659,7 @@ void ShapeMimic::collapseTransforms()
          if (mimicNode==&subtree->start)
          {
             // this should just never happen...
-            setExportError("Assertion failed:  Illegal condition.");
+            AppConfig::SetExportError("13", "Assertion failed:  Illegal condition.");
             return;
          }
 
@@ -735,7 +759,7 @@ void ShapeMimic::generateObjects(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
    
    S32 i,j;
    
@@ -751,7 +775,7 @@ void ShapeMimic::generateObjects(Shape * shape)
 
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
    
    // initialize array that indexes first object in subshape
    for (i=0; i<subtrees.size(); i++)
@@ -765,14 +789,16 @@ void ShapeMimic::generateObjects(Shape * shape)
    // go through mesh list and add objects as we go
    for (i=0; i<objectList.size(); i++)
    {
+		AppConfig::SetProgress((F32)i / (F32)objectList.size(), 0.28f, "Generating objects...");
+
       // if already encountered an error, then
       // we'll just go through the motions
-      if (isError()) return;
+      if (AppConfig::IsExportError()) return;
    
       ObjectMimic * object = objectList[i];
       if (!object->isBone && !AppConfig::GetAllowUnusedMeshes() && !object->validDetails)
       {
-         setExportError(avar("Mesh \"%s\" not hooked up to shape.",object->fullName));
+         AppConfig::SetExportError("16", avar("Mesh \"%s\" not hooked up to shape.",object->fullName));
          return;
       }
 
@@ -780,7 +806,7 @@ void ShapeMimic::generateObjects(Shape * shape)
       if (object->appParent != object->appTSParent && object->isBone)
       {
          // trying to cut out a bone node ... not allowed
-         setExportError(avar("Cannot collapse node \"%s\" because it is a bone.",object->appParent->getName()));
+         AppConfig::SetExportError("7", avar("Cannot collapse node \"%s\" because it is a bone.",object->appParent->getName()));
          return;
       }
 
@@ -789,7 +815,7 @@ void ShapeMimic::generateObjects(Shape * shape)
       {
          // don't need it, don't want it
          delete object;
-         delElement(objectList,i);
+         delElementAtIndex(objectList,i);
          i--;
          continue;
       }
@@ -815,7 +841,7 @@ void ShapeMimic::generateObjects(Shape * shape)
          if (k==validDetails->size() && !AppConfig::GetAllowUnusedMeshes())
          {
             // ooh, this mesh is an invalid detail size
-            setExportError(avar("Mesh \"%s\" was found with invalid detail (%i)",object->name,object->details[j].size));
+            AppConfig::SetExportError("41", avar("Mesh \"%s\" was found with invalid detail (%i)",object->name,object->details[j].size));
             return;
          }
 
@@ -841,7 +867,7 @@ void ShapeMimic::generateObjects(Shape * shape)
             object->details[j].mesh->skinMimic->meshNum = shape->meshes.size();
 
          // now hook up this mesh...
-         if (object->details[j].mesh->sortedObject)
+         if (object->details[j].mesh->sortedObject && !object->details[j].mesh->skinMimic)
             shape->meshes.push_back(Mesh(Mesh::T_Sorted));
          else if (object->details[j].mesh->skinMimic)
             shape->meshes.push_back(Mesh(Mesh::T_Skin));
@@ -850,11 +876,10 @@ void ShapeMimic::generateObjects(Shape * shape)
          shape->meshes.back().numFrames = 0;
          shape->meshes.back().matFrames = 0;
          if (object->details[j].mesh->billboard)
-            shape->meshes.back().setFlag(Mesh::Billboard);
-         else if (object->details[j].mesh->appMesh->isBillboardZAxis())
          {
             shape->meshes.back().setFlag(Mesh::Billboard);
-            shape->meshes.back().setFlag(Mesh::BillboardZ);
+            if (object->details[j].mesh->appMesh->isBillboardZAxis())
+               shape->meshes.back().setFlag(Mesh::BillboardZ);
          }
          // get address of tsMesh -- note: important that mesh
          // vector doesn't shift in memory (see above for how we
@@ -867,7 +892,7 @@ void ShapeMimic::generateObjects(Shape * shape)
       if (object->numDetails==0)
       {
          delete object;
-         delElement(objectList,i);
+         delElementAtIndex(objectList,i);
          shape->objects.pop_back();
          i--;
          continue;
@@ -911,7 +936,7 @@ void ShapeMimic::setObjectPriorities(std::vector<ObjectMimic*> & objects)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    S32 i,j;
    for (i=0; i<objects.size(); i++)
@@ -957,11 +982,11 @@ void ShapeMimic::setObjectPriorities(std::vector<ObjectMimic*> & objects)
       for (j=0; j<appMesh->getNumFaces(); j++)
       {
          // add material for face j
-         S32 mi = addFaceMaterial(appMesh,j);
+         S32 mi = addFaceMaterial(appMesh,appMesh->getFaceMaterial(j));
 
          // if already encountered an error, then
          // we'll just go through the motions
-         if (isError()) return;
+         if (AppConfig::IsExportError()) return;
     
          if (mi==-1 || mi==matIndex)
             continue;
@@ -1015,7 +1040,7 @@ void ShapeMimic::generateDefaultStates(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    U32 i;
 
@@ -1059,7 +1084,7 @@ void ShapeMimic::generateDefaultStates(Shape * shape)
       addNodeTranslation(curNode,AppTime::DefaultTime(),shape,false,trans,true);
       if (!isEqual(scale,Point3D(1,1,1),0.01f))
       {
-         setExportError("Assertion failed: scale on default transform");
+         AppConfig::SetExportError("17", "Assertion failed: scale on default transform");
          return;
       }
    }
@@ -1069,7 +1094,7 @@ void ShapeMimic::generateObjectState(ObjectMimic * om, const AppTime & time, Sha
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDObjectStates,avar("Adding object state to %i detail level(s) of mesh \"%s\".\r\n",om->numDetails,om->name));
    if (addFrame)
@@ -1098,7 +1123,7 @@ void ShapeMimic::generateObjectState(ObjectMimic * om, const AppTime & time, Sha
       // must have highest detail level...
       if (!om->details[0].mesh->tsMesh || om->details[0].mesh->tsMesh->getType() == Mesh::T_Null)
       {
-         setExportError(avar("Missing highest detail level on mesh \"%s\".",om->name));
+         AppConfig::SetExportError("18", avar("Missing highest detail level on mesh \"%s\".",om->name));
          return;
       }
 
@@ -1119,11 +1144,11 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (om->isBone)
    {
-      setExportError("Assertion failed: bone should no longer be on node");
+      AppConfig::SetExportError("19", "Assertion failed: bone should no longer be on node");
       return;
    }
    if (om->isSkin)
@@ -1136,6 +1161,7 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
       Mesh * tsMesh  = om->details[dl].mesh->tsMesh;
       AppMesh * appMesh = om->details[dl].mesh->appMesh;
       Matrix<4,4,F32> & objectOffset = om->details[dl].mesh->objectOffset;
+      F32 multiResPercent = om->details[dl].multiResPercent;
 
       // if first frame then compute object offset
       if (tsMesh->numFrames==0)
@@ -1177,6 +1203,8 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
 
       appMesh->generateFaces(faces,verts,tverts,indices,smooth,norms,&vertId);
 
+      if (AppConfig::IsExportError()) return;
+
       if (tsMesh->numFrames==0)
       {
          // first frame, copy faces into mesh
@@ -1187,11 +1215,12 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
          om->details[dl].mesh->smoothingGroups = smooth;
          om->details[dl].mesh->vertId = vertId;
 
+
          // make sure all the materials are added
-         for (S32 j=0; j<appMesh->getNumFaces(); j++)
+         for (S32 j=0; j<faces.size(); j++)
          {
             // add material for face j
-            S32 mi = addFaceMaterial(appMesh,j);
+            S32 mi = addFaceMaterial(appMesh,tsMesh->primitives[j].type&Primitive::NoMaterial ? -1 : tsMesh->primitives[j].type&Primitive::MaterialMask);
 
             // replace appmesh material index with ts material index
             tsMesh->primitives[j].type &= ~Primitive::MaterialMask;
@@ -1202,7 +1231,7 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
 
             // if already encountered an error, then
             // we'll just go through the motions
-            if (isError())
+            if (AppConfig::IsExportError())
                return;
          }
       }
@@ -1236,7 +1265,7 @@ void ShapeMimic::generateFrame(ObjectMimic * om, const AppTime & time, bool addF
          }
          if (i!=faces.size() || error)
          {
-            setExportError(avar("Mesh topology is animated on mesh \"%s\".",appMesh->getName()));
+            AppConfig::SetExportError("20", avar("Mesh topology is animated on mesh \"%s\".",appMesh->getName()));
             return;
          }
       }
@@ -1276,7 +1305,7 @@ void ShapeMimic::generateNodeTransform(NodeMimic * curNode, const AppTime & time
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (blend)
       getBlendNodeTransform(curNode->appNode,curNode->parent->appNode,curNode->child0,curNode->parent0,time,blendReferenceTime,rot,trans,qrot,scale);
@@ -1292,7 +1321,7 @@ void ShapeMimic::generateIflMaterials(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // if none to make...
    if (iflList.empty())
@@ -1302,13 +1331,16 @@ void ShapeMimic::generateIflMaterials(Shape * shape)
 
    for (S32 i=0; i<iflList.size(); i++)
    {
-      shape->IFLmaterials.push_back(IFLMaterial());
-      IFLMaterial & iflMaterial = shape->IFLmaterials.back();
-      
-      iflMaterial.name = addName(getFileBase(iflList[i]->appIfl->getFilename()),shape);
-      iflMaterial.slot = iflList[i]->materialSlot;
+      if( iflList[i]->appIfl )
+      {
+         shape->IFLmaterials.push_back(IFLMaterial());
+         IFLMaterial & iflMaterial = shape->IFLmaterials.back();
 
-      AppConfig::PrintDump(PDSequences,avar("Adding ifl material \"%s\".\r\n",iflList[i]->appIfl->getFilename()));
+         iflMaterial.name = addName(getFileBase(iflList[i]->appIfl->getFilename()),shape);
+         iflMaterial.slot = iflList[i]->materialSlot;
+
+         AppConfig::PrintDump(PDSequences,avar("Adding ifl material \"%s\".\r\n",iflList[i]->appIfl->getFilename()));
+   }
    }
 }
 
@@ -1320,16 +1352,18 @@ void ShapeMimic::generateSequences(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    AppConfig::PrintDump(PDSequences,avar("\r\nAdding %i sequences...\r\n\r\n",sequences.size()));
 
    for (S32 i=0; i<sequences.size(); i++)
    {
+		AppConfig::SetProgress((F32)i / (F32)sequences.size(), 0.49f, "Generating sequences...");
+
       AppSequence * appSeq = sequences[i];
       if (appSeq==NULL)
       {
-         setExportError("Assertion failed.  Null sequence");
+         AppConfig::SetExportError("21", "Assertion failed.  Null sequence");
          return;
       }
 
@@ -1363,7 +1397,7 @@ void ShapeMimic::generateSequences(Shape * shape)
       else
          scaleType="";
 
-      if (isError()) return;
+      if (AppConfig::IsExportError()) return;
 
       // supply some dump information
       if (!seqData.cyclic)
@@ -1384,7 +1418,7 @@ void ShapeMimic::generateSequences(Shape * shape)
                 seqData.priority));
       if (seqData.ignoreGround)
          AppConfig::PrintDump(PDSequences,"Ignoring ground transform.\r\n");
-      AppConfig::PrintDump(PDSequences,avar("Duration = %3.5f, secPerFrame = %3.5f, # frames = %i\r\n",seq.duration,seq.duration/seqData.numFrames,seqData.numFrames));
+      AppConfig::PrintDump(PDSequences,avar("Duration = %3.5f, secPerFrame = %3.5f, # frames = %i\r\n",seqData.duration.getF32(),seqData.delta.getF32(),seqData.numFrames));
       AppConfig::PrintDump(PDSequences,avar("Sequence includes %i nodes, %i objects, and %i ifl materials\r\n",nodeCount,objectCount,iflCount));
       AppConfig::PrintDump(PDSequences,avar("  %i rotations, %i translations, %i scales%s\r\n\r\n",rotCount,transCount,scaleCount,scaleType));
 
@@ -1404,7 +1438,7 @@ S32 ShapeMimic::setObjectMembership(Shape * shape, Sequence & seq, AppSequenceDa
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return 0;
+   if (AppConfig::IsExportError()) return 0;
 
    // clear out all object membership...
    setMembershipArray(seq.matters.vis,seqData.forceVis,0,objectList.size());
@@ -1463,7 +1497,7 @@ void ShapeMimic::setNodeMembership(Shape * shape, Sequence & seq, AppSequenceDat
    // if already encountered an error, then
    // we'll just go through the motions
    rotCount = transCount = uniformScaleCount = alignedScaleCount = arbitraryScaleCount = 0;
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // decide node membership
    S32 skipScaleCount = 0;
@@ -1542,7 +1576,7 @@ void ShapeMimic::setRotationMembership(Shape * shape, Sequence & seq, AppSequenc
    // if already encountered an error, then
    // we'll just go through the motions
    rotCount = 0;
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (seqData.forceTransform || !seqData.enableTransform)
    {
@@ -1587,7 +1621,7 @@ void ShapeMimic::setTranslationMembership(Shape * shape, Sequence & seq, AppSequ
    // if already encountered an error, then
    // we'll just go through the motions
    transCount = 0;
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (seqData.forceTransform || !seqData.enableTransform)
    {
@@ -1632,7 +1666,7 @@ void ShapeMimic::setScaleMembership(Sequence & seq, AppSequenceData & seqData, S
    // if already encountered an error, then
    // we'll just go through the motions
    arbitraryScaleCount = alignedScaleCount = uniformScaleCount = 0;
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    S32 scaleCount = 0;
    if (seqData.forceScale)
@@ -1652,7 +1686,7 @@ S32 ShapeMimic::setUniformScaleMembership(Sequence & seq, AppSequenceData & seqD
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return 0;
+   if (AppConfig::IsExportError()) return 0;
 
    S32 nodeCount = 0;
    for (S32 i=0; i<nodes.size(); i++)
@@ -1693,7 +1727,7 @@ S32 ShapeMimic::setAlignedScaleMembership(Sequence & seq, AppSequenceData & seqD
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return 0;
+   if (AppConfig::IsExportError()) return 0;
 
    S32 nodeCount = 0;
 
@@ -1739,7 +1773,7 @@ bool ShapeMimic::animatesAlignedScale(AppSequenceData & seqData)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return false;
+   if (AppConfig::IsExportError()) return false;
 
    if (!seqData.enableAlignedScale)
       return false;
@@ -1768,7 +1802,7 @@ bool ShapeMimic::animatesArbitraryScale(AppSequenceData & seqData)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return false;
+   if (AppConfig::IsExportError()) return false;
 
    if (!seqData.enableArbitraryScale)
       return false;
@@ -1803,7 +1837,7 @@ void ShapeMimic::setIflMembership(Shape * shape, Sequence & seq, AppSequenceData
    // if already encountered an error, then
    // we'll just go through the motions
    iflCount = 0;
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    setMembershipArray(seq.matters.ifl,false,0,iflList.size());
 
@@ -1823,7 +1857,7 @@ void ShapeMimic::setIflMembership(Shape * shape, Sequence & seq, AppSequenceData
          S32 len = names.size();
          if (durations.size() != len)
          {
-            setExportError("Assertion failed: mismatch between ifl names and ifl durations");
+            AppConfig::SetExportError("22", "Assertion failed: mismatch between ifl names and ifl durations");
             return;
          }
          if (len==0)
@@ -1831,10 +1865,10 @@ void ShapeMimic::setIflMembership(Shape * shape, Sequence & seq, AppSequenceData
             continue;
 
          S32 idx = 0;
-         const char * prev = names[0];
-         while (time<endTime)
+         const char *prev = names[0];
+         while (time <= endTime)
          {
-            if (time>=startTime && stricmp(prev,names[idx % len]))
+            if (time >= startTime && stricmp(prev,names[idx % len]))
             {
                // changing material during this sequence...
                iflCount++;
@@ -1853,7 +1887,7 @@ void ShapeMimic::generateGroundAnimation(Shape * shape, Sequence & seq, AppSeque
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    seq.firstGroundFrame = shape->groundTranslations.size();
    seq.numGroundFrames = 0;
@@ -1862,13 +1896,10 @@ void ShapeMimic::generateGroundAnimation(Shape * shape, Sequence & seq, AppSeque
       // nothing more to do
       return;
 
-   // does this sequence animate the bounds node, if not, don't add ground transform
-   if (!boundsNode->animatesTransform(seqData))
-      // no ground animation
+   // no ground animation if the sequence does not generate it automatically and
+   // the bounds node is not animated
+   if (!seqData.autoGround && !boundsNode->animatesTransform(seqData))
       return;
-
-   // at this point we know that we do animate bounds node,
-   // so we do have ground animation...
 
    S32 groundNumFrames = seqData.groundNumFrames;
 
@@ -1876,21 +1907,33 @@ void ShapeMimic::generateGroundAnimation(Shape * shape, Sequence & seq, AppSeque
    seq.numGroundFrames = groundNumFrames-1; // we only really add this many frames
 
    AppConfig::PrintDump(PDSequences,
-      avar("\r\nAdding %i ground transform frames at %s sec per frame intervals.\r\n\r\n",groundNumFrames,seqData.groundDelta.getStr()));
+      avar("\r\nAdding %i ground transform frames at %s sec per frame intervals.\r\n\r\n",groundNumFrames-1,seqData.groundDelta.getStr()));
 
    // frame at start isn't added since it would just be identity anyway...
    AppTime time = seqData.startTime + seqData.groundDelta;
    for (S32 i=0; i<groundNumFrames-1; i++, time += seqData.groundDelta)
    {
-      shape->groundTranslations.push_back(Point3D());
-      shape->groundRotations.push_back(Quaternion());
+      if (seqData.autoGround)
+      {
+         AppTime elapsedTime = time - seqData.startTime;
+         shape->groundTranslations.push_back(seqData.groundSpeed * elapsedTime.getF32());
+         shape->groundRotations.push_back(Quaternion(0, 0, 0, 1));
+      }
+      else
+      {
+         shape->groundTranslations.push_back(Point3D());
+         shape->groundRotations.push_back(Quaternion());
+         Quaternion & rot = shape->groundRotations.back();
+         Point3D & trans = shape->groundTranslations.back();
+         Quaternion srot;   // ignored on ground transform
+         Point3D scale; // ignored on ground transform
+         getDeltaTransform(boundsNode,seqData.startTime,time,rot,trans,srot,scale);
+      }
+
       Quaternion & rot = shape->groundRotations.back();
       Point3D & trans = shape->groundTranslations.back();
-      Quaternion srot;   // ignored on ground transform
-      Point3D scale; // ignored on ground transform
-      getDeltaTransform(boundsNode,seqData.startTime,time,rot,trans,srot,scale);
       AppConfig::PrintDump(PDSequences,avar("Ground transform frame:\r\n   trans=(%f,%f,%f)\r\n   rot=(%f,%f,%f,%f)\r\n",
-                           trans.x(),trans.y(),trans.y(),rot.x(),rot.y(),rot.z(),rot.w()));
+                           trans.x(),trans.y(),trans.z(),rot.x(),rot.y(),rot.z(),rot.w()));
    }
 }
 
@@ -1898,7 +1941,7 @@ void ShapeMimic::generateNodeAnimation(Shape * shape, Sequence & seq, AppSequenc
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // add the states -- add all the states for each node in a row
    seq.baseRotation = shape->nodeRotations.size();
@@ -1934,7 +1977,7 @@ void ShapeMimic::generateObjectAnimation(Shape * shape, Sequence & seq, AppSeque
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // add the states -- add all the states for each object in a row
    seq.baseObjectState = shape->objectStates.size();
@@ -1953,7 +1996,7 @@ void ShapeMimic::generateFrameTriggers(Shape * shape, Sequence & seq, AppSequenc
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // initialize triggers...
    seq.firstTrigger = shape->triggers.size();
@@ -2002,14 +2045,14 @@ void ShapeMimic::generateFrameTriggers(Shape * shape, Sequence & seq, AppSequenc
    }
 
    // now add to dump file...
-   AppConfig::PrintDump(PDSequences,avar("\r\n------Trigger info for sequence %s",appSeq->getName()));
+   AppConfig::PrintDump(PDSequences,avar("\r\n------Trigger info for sequence %s\r\n",appSeq->getName()));
    for (i=0; i<seq.numTriggers; i++)
    {
       Trigger & trigger = shape->triggers[i];
-      AppConfig::PrintDump(PDSequences,avar("Trigger state %i at pos %f%s",
+      AppConfig::PrintDump(PDSequences,avar("Trigger state %i at pos %f%s\r\n",
                                              trigger.state&TriggerState::StateMask,
                                              trigger.pos,
-                                             trigger.state & TriggerState::StateOn ? "." : " (off)."));
+                                             trigger.state & TriggerState::StateOn ? " (on)." : " (off)."));
    }
 }
 
@@ -2017,7 +2060,7 @@ bool ShapeMimic::testCutNodes(AppSequenceData & seqData)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return true;
+   if (AppConfig::IsExportError()) return true;
 
    // this shouldn't be allowed, but check anyway...
    S32 numFrames = seqData.numFrames;
@@ -2132,7 +2175,7 @@ bool ShapeMimic::testCutNodes(AppSequenceData & seqData)
             AppConfig::PrintDump(PDAlways,"        Scale may have animated too.\r\n");
             AppConfig::PrintDump(PDAlways,"---------------------------------\r\n");
 
-            setExportError(avar("Illegal transform animation detected between collapsed node \"%s\" and \"%s\".",
+            AppConfig::SetExportError("23", avar("Illegal transform animation detected between collapsed node \"%s\" and \"%s\".",
                            cutNodes[i]->getName(),cutNodesParents[i]->getName()));
             return true;
          }
@@ -2152,7 +2195,7 @@ void ShapeMimic::generateMaterialList(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    shape->materials = materials;
 }
@@ -2165,7 +2208,7 @@ void ShapeMimic::generateSkins(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // put skins in the right order...we're basically sorting by detailSize member of skinMimic
    // but we'll do it a slow way to make sure in synch with detail ordering
@@ -2188,13 +2231,13 @@ void ShapeMimic::generateSkins(Shape * shape)
       }
       if (j!=skins.size() && !AppConfig::GetAllowUnusedMeshes())
       {
-         setExportError("Unused skins were found.");
+         AppConfig::SetExportError("24", "Unused skins were found.");
          return;
       }
       for (;j<skins.size();j++)
       {
          delete skins[j];
-         delElement(skins,j);
+         delElementAtIndex(skins,j);
          j--;
       }
    }
@@ -2211,7 +2254,7 @@ void ShapeMimic::generateSkins(Shape * shape)
             continue;
          if (!objectList[i]->details[meshNum].mesh->skinMimic)
          {
-            setExportError("Assertion failed generating skins");
+            AppConfig::SetExportError("25", "Assertion failed generating skins");
             return;
          }
 
@@ -2249,7 +2292,7 @@ void ShapeMimic::generateSkins(Shape * shape)
                   break;
             if (k==nodes.size())
             {
-               setExportError("Error: bone missing from shape");
+               AppConfig::SetExportError("26", "Error: bone missing from shape");
                return;
             }
             skinMesh->nodeIndex.push_back(k);
@@ -2291,7 +2334,7 @@ void ShapeMimic::copyWeightsToVerts(SkinMimic * skinMimic)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // on input, weights are stored in a bone x vertId matrix
    // on output, weights will be stored in a bone x vert index matrix
@@ -2318,153 +2361,199 @@ void ShapeMimic::copyWeightsToVerts(SkinMimic * skinMimic)
 //
 //-----------------------------------------------------------
 
-void ShapeMimic::optimizeMeshes(Shape * shape)
+void ShapeMimic::prepareMesh(Mesh *mesh, std::vector<U32> &smooth, std::vector<U32> &remap,
+                              std::vector<U32> *vertId, F32 multiResPercent, bool isSortedObject)
 {
-   // if already encountered an error, then
-   // we'll just go through the motions
-   if (isError()) return;
-   
-   S32 i,j,k;
-   
-   AppConfig::PrintDump(PDObjectStateDetails,"\r\nOptimizing meshes...\r\n");
+   S32 i,j;
+
+   // initialise remap array
+   remap.resize(mesh->vertsPerFrame);
+   for (i = 0; i < remap.size(); i++)
+      remap[i] = i;
+
+   if (AppConfig::GetExportOptimized())
+   {
+      // collapse vertices
+      collapseVertices(mesh, smooth, remap, vertId);
+
+      // need to sprinkle these here and there to avoid crashes...
+      if (AppConfig::IsExportError()) return;
+   }
+
+   if (smooth.size() != 0)
+   {
+      // generate normals using smoothing groups...
+      computeNormals(mesh->primitives, mesh->indices, mesh->verts,
+               mesh->normals, smooth, mesh->vertsPerFrame, mesh->numFrames);
+   }
+
+   // have normals...now encode them
+   mesh->enormals.clear();
+   for (i = 0; i < mesh->normals.size(); i++)
+      mesh->enormals.push_back(Mesh::encodeNormal(mesh->normals[i]));
+
+   // now that verts are collapsed, delete any trivial faces => MUST do this
+   // before decimating (multires) and stripping as both require triangles with
+   // 3 unique verts.
+   for (i = 0; i < mesh->primitives.size(); i++)
+   {
+      Primitive & face = mesh->primitives[i];
+      U32 start = face.firstElement;
+      U32 idx0 = mesh->indices[start + 0];
+      U32 idx1 = mesh->indices[start + 1];
+      U32 idx2 = mesh->indices[start + 2];
+      if (idx0==idx1 || idx1==idx2 || idx0==idx2)
+      {
+         delElementAtIndex(mesh->indices, start);
+         delElementAtIndex(mesh->indices, start);
+         delElementAtIndex(mesh->indices, start);
+
+         for (S32 j = 0; j < mesh->primitives.size(); j++)
+            if (U16(mesh->primitives[j].firstElement) >= start)
+               mesh->primitives[j].firstElement -= 3;
+         delElementAtIndex(mesh->primitives, i);
+         i--;
+      }
+   }
+
+   // remap some information (skin meshes only)
+   for (i = 0; i < mesh->vindex.size(); i++)
+       mesh->vindex[i] = remap[mesh->vindex[i]];
+   for (i = (S32)mesh->vindex.size()-1; i > 0; i--)
+   {
+      for (j = 0; j < i; j++)
+      {
+         if (mesh->vindex[j]==mesh->vindex[i] && mesh->vbone[j]==mesh->vbone[i])
+         {
+            if (fabs(mesh->vweight[i] - mesh->vweight[j]) > 0.01f)
+            {
+               AppConfig::SetExportError("28", "Assertion failed when collapsing vertices on skin (1)");
+               return;
+            }
+
+            // vertex and bone index for jth and ith tuple match...merge them
+            delElementAtIndex(mesh->vweight,i);
+            delElementAtIndex(mesh->vindex,i);
+            delElementAtIndex(mesh->vbone,i);
+            break; // out of j loop
+         }
+      }
+   }
+
+   // auto-LOD
+   if (multiResPercent < 1.0f)
+      decimate(mesh, multiResPercent);
+
+   // need to sprinkle these here and there to avoid crashes...
+   if (AppConfig::IsExportError()) return;
+
+   // re-sort the vertexIndex, boneIndex, weight lists by vertex and bone
+   // respectively (skins only)
+   for (i = 0; i < (S32)mesh->vindex.size()-1; i++)
+   {
+      for (j = i+1; j < mesh->vindex.size(); j++)
+      {
+         if ((mesh->vindex[j] < mesh->vindex[i]) ||
+            (mesh->vindex[j] == mesh->vindex[i] && mesh->vbone[j] < mesh->vbone[i]))
+         {
+            // swap
+            S32 tmp = mesh->vindex[j];
+            mesh->vindex[j] = mesh->vindex[i];
+            mesh->vindex[i] = tmp;
+            tmp = mesh->vbone[j];
+            mesh->vbone[j] = mesh->vbone[i];
+            mesh->vbone[i] = tmp;
+            F32 tmp2 = mesh->vweight[j];
+            mesh->vweight[j] = mesh->vweight[i];
+            mesh->vweight[i] = tmp2;
+         }
+      }
+   }
+
+   // strip
+   if (AppConfig::GetExportOptimized() && !isSortedObject)
+      stripify(mesh->primitives, mesh->indices);
+}
+
+void ShapeMimic::prepareMeshesForExport(Shape *shape)
+{
+   AppConfig::PrintDump(PDObjectStateDetails,"\r\nPreparing meshes for export...\r\n");
+
+   S32 i,j;
+
+   S32 preparedCount = 0;
+   AppConfig::SetProgress(0.0f, 0.71f, "Preparing meshes...");
 
    // go through meshes and optimize each one...
-   for (i=0; i<objectList.size(); i++)
+   for (i = 0; i < objectList.size(); i++)
    {
       ObjectMimic * om = objectList[i];
       if (om->isSkin)
          // save skins for later...
          continue;
-      for (j=om->numDetails-1; j>=0; j--)
+
+      for (j = 0; j < om->numDetails; j++)
       {
+         AppConfig::SetProgress((F32)preparedCount / shape->meshes.size(), 0.71f, "Preparing meshes...");
+         preparedCount++;
+
          if (!om->details[j].mesh)
             continue;
 
-         AppConfig::PrintDump(PDObjectStateDetails,avar("\r\nOptimizing mesh \"%s\" detail level %i.\r\n",om->name,om->details[j].size));
+         AppConfig::PrintDump(PDObjectStateDetails,avar("\r\nPreparing mesh \"%s\" detail level %i.\r\n", om->name,om->details[j].size));
 
-         Mesh * mesh = om->details[j].mesh->tsMesh;
-         std::vector<U32> & smooth = om->details[j].mesh->smoothingGroups;
-         std::vector<U32> & remap = om->details[j].mesh->remap;
-
-         // collapse vertices
-         collapseVertices(mesh,smooth,remap,NULL);
-
-         // need to sprinkle these here and there to avoid crashes...
-         if (isError()) return;
-
-         // now that verts are collapsed, delete any trivial facees
-         for (S32 k=0; k<mesh->primitives.size(); k++)
-         {
-            Primitive & face = mesh->primitives[k];
-            U32 start = face.firstElement;
-            U32 idx0 = mesh->indices[start + 0];
-            U32 idx1 = mesh->indices[start + 1];
-            U32 idx2 = mesh->indices[start + 2];
-            if (idx0==idx1 || idx1==idx2 || idx0==idx2)
-            {
-               delElement(mesh->indices,start);
-               delElement(mesh->indices,start);
-               delElement(mesh->indices,start);
-
-               for (S32 l=0; l<mesh->primitives.size(); l++)
-                  if (U16(mesh->primitives[l].firstElement) >= start)
-                     mesh->primitives[l].firstElement -= 3;
-               delElement(mesh->primitives,k);
-               k--;
-            }
-         }
-         
-         //
-         if (om->details[j].mesh->sortedObject)
-            continue;
-
-         // strip
-         stripify(mesh->primitives,mesh->indices);
+         prepareMesh(om->details[j].mesh->tsMesh,
+                     om->details[j].mesh->smoothingGroups,
+                     om->details[j].mesh->remap,
+                     NULL,
+                     om->details[j].multiResPercent,
+                     om->details[j].mesh->sortedObject);
 
          // need to sprinkle these here and there to avoid crashes...
-         if (isError()) return;
+         if (AppConfig::IsExportError()) return;
       }
    }
-   
-   // need to sprinkle these here and there to avoid crashes...
-   if (isError()) return;
 
-   // optimize skins...
+   // prepare skins...
    std::vector<U32> remap;
-   for (i=skins.size()-1; i>=0; i--)
+   for (i = 0; i < skins.size(); i++)
    {
-      SkinMimic * skin = skins[i];
-      Mesh * skinMesh = skin->skinMesh;
-      std::vector<U32> & smooth = skin->smoothingGroups;
-      std::vector<U32> * vertId = &skin->vertId;
-      
+      AppConfig::SetProgress((F32)preparedCount / shape->meshes.size(), 0.71f, "Preparing skins...");
+      preparedCount++;
+
+      SkinMimic *skin = skins[i];
+      Mesh *skinMesh = skin->skinMesh;
+      std::vector<U32> &smooth = skin->smoothingGroups;
+
       // first make sure we have no missing verts...
-      for (j=1; j<skinMesh->vindex.size(); j++)
+      for (j = 1; j < skinMesh->vindex.size(); j++)
       {
          if (skinMesh->vindex[j]-skinMesh->vindex[j-1]>1)
          {
-            setExportError(avar("Vertex %i missing weight on skin \"%s\"",skinMesh->vindex[j]+1,skin->appMesh->getName()));
+            AppConfig::SetExportError("27", avar("Vertex %i missing weight on skin \"%s\"",
+               skinMesh->vindex[j]+1, skin->appMesh->getName()));
             return;
          }
       }
 
-      // start optimizing this skin...
-      AppConfig::PrintDump(PDObjectStateDetails,avar("\r\nOptimizing skin mesh \"%s\" detail level %i.\r\n",skin->appMesh->getName(),skin->detailSize));
+      AppConfig::PrintDump(PDObjectStateDetails,avar("\r\nPreparing skin mesh \"%s\" detail level %i.\r\n",
+         skin->appMesh->getName(), skin->detailSize));
 
-      // we don't respect smoothing groups on skins
-      for (j=0;j<smooth.size();j++)
-         smooth[j]=0;
-
-      // collapse vertices      
-      collapseVertices(skinMesh,smooth,remap,vertId);
-
-      // remap some information
-      for (j=0; j<skinMesh->vindex.size(); j++)
-         skinMesh->vindex[j] = remap[skinMesh->vindex[j]];
-      for (j=(S32)skinMesh->vindex.size()-1; j>0; j--)
+      if (AppConfig::IgnoreSmoothingGroupOnSkinMesh())
       {
-         for (k=0; k<j; k++)
-         {
-            if (skinMesh->vindex[k]==skinMesh->vindex[j] && skinMesh->vbone[k]==skinMesh->vbone[j])
-            {
-               if (fabs(skinMesh->vweight[j]-skinMesh->vweight[k])>0.01f)
-               {
-                  setExportError("Assertion failed when collapsing vertices on skin (1)");
-                  return;
-               }
-
-               // vertex and bone index for kth and jth tuple match...merge them
-               delElement(skinMesh->vweight,j);
-               delElement(skinMesh->vindex,j);
-               delElement(skinMesh->vbone,j);
-               break; // out of k loop
-            }
-         }
+         for (j = 0; j < smooth.size(); j++)
+            smooth[j] = 0;
       }
 
-      // re-sort the vertexIndex, boneIndex, weight lists by vertex and bone, respectively...
-      for (j=0; j<(S32)skinMesh->vindex.size()-1; j++)
-      {
-         for (k=j+1; k<skinMesh->vindex.size(); k++)
-         {
-            if ((skinMesh->vindex[k]<skinMesh->vindex[j]) || (skinMesh->vindex[k]==skinMesh->vindex[j] && skinMesh->vbone[k]<skinMesh->vbone[j]))
-            {
-               // swap
-               S32 tmp = skinMesh->vindex[k];
-               skinMesh->vindex[k] = skinMesh->vindex[j];
-               skinMesh->vindex[j] = tmp;
-               tmp = skinMesh->vbone[k];
-               skinMesh->vbone[k] = skinMesh->vbone[j];
-               skinMesh->vbone[j] = tmp;
-               F32 tmp2 = skinMesh->vweight[k];
-               skinMesh->vweight[k] = skinMesh->vweight[j];
-               skinMesh->vweight[j] = tmp2;
-            }
-         }
-      }
+      prepareMesh(skinMesh,
+                  smooth,
+                  remap,
+                  &skin->vertId,
+                  skin->multiResPercent,
+                  false);
 
-      // strip
-      stripify(skinMesh->primitives,skinMesh->indices);
+      // need to sprinkle these here and there to avoid crashes...
+      if (AppConfig::IsExportError()) return;
    }
 }
 
@@ -2472,22 +2561,17 @@ void ShapeMimic::collapseVertices(Mesh * mesh, std::vector<U32> & smooth, std::v
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
    
    if (mesh->verts.size() != mesh->normals.size())
    {
-      setExportError("Assertion failed when collapsing vertices (2)");
+      AppConfig::SetExportError("29", "Assertion failed when collapsing vertices (2)");
       return;
    }
 
    AppConfig::PrintDump(PDObjectStateDetails,avar("%i verts before joining verts\r\n",mesh->verts.size()));
 
    S32 i,j;
-
-   // set up remap
-   remap.resize(mesh->vertsPerFrame);
-   for (i=0; i<remap.size(); i++)
-      remap[i]=i;
 
    for (i=(S32)mesh->vertsPerFrame-1; i>0; i--)
    {
@@ -2496,8 +2580,13 @@ void ShapeMimic::collapseVertices(Mesh * mesh, std::vector<U32> & smooth, std::v
       {
          //------------------------------------------
          // same location, tvert, smoothing group, vert id (if passed)?
-         U32 s1 = smooth.size()!=0 ? smooth[i] : 1;
-         U32 s2 = smooth.size()!=0 ? smooth[j] : 1;
+         U32 s1 = 1;
+         U32 s2 = 1;
+         if( !AppConfig::IgnoreSmoothingGroupDuringCollapse() && smooth.size() > 0 )
+         {
+            s1 = smooth[i];
+            s2 = smooth[j];
+         }
          if (!vertexSame(mesh->verts[i],mesh->verts[j],mesh->tverts[i],mesh->tverts[j],s1,s2,mesh->normals[i],mesh->normals[j],i,j,vertId))
             continue;
 
@@ -2524,7 +2613,7 @@ void ShapeMimic::collapseVertices(Mesh * mesh, std::vector<U32> & smooth, std::v
          // alright, vertex i and j are the same...get rid of vertex i (i>j)
          if (i<=j)
          {
-            setExportError("Assertion failed when collapsing vertex (3)");
+            AppConfig::SetExportError("30", "Assertion failed when collapsing vertex (3)");
             return;
          }
          for (k=0; k<mesh->indices.size(); k++)
@@ -2538,18 +2627,18 @@ void ShapeMimic::collapseVertices(Mesh * mesh, std::vector<U32> & smooth, std::v
          for (k=mesh->numFrames-1; k>=0; k--)
          {
             S32 startVert = mesh->vertsPerFrame * k;
-            delElement(mesh->verts,i+startVert);
-            delElement(mesh->normals,i+startVert);
+            delElementAtIndex(mesh->verts,i+startVert);
+            delElementAtIndex(mesh->normals,i+startVert);
          }
          for (k=mesh->matFrames-1; k>=0; k--)
          {
             S32 startTVert = mesh->vertsPerFrame * k;
-            delElement(mesh->tverts,i+startTVert);
+            delElementAtIndex(mesh->tverts,i+startTVert);
          }
          if (vertId)
-            delElement(*vertId,i);
+            delElementAtIndex(*vertId,i);
          if (smooth.size() != 0)
-            delElement(smooth,i);
+            delElementAtIndex(smooth,i);
          mesh->vertsPerFrame--;
 
          // update remap -- we're getting rid of vertex i and replacing it with vertex j
@@ -2566,32 +2655,23 @@ void ShapeMimic::collapseVertices(Mesh * mesh, std::vector<U32> & smooth, std::v
       }
    }
 
-   if (smooth.size() != 0)
-      // generate normals using smoothing groups...
-      computeNormals(mesh->primitives,mesh->indices,mesh->verts,mesh->normals,smooth,mesh->vertsPerFrame,mesh->numFrames);
-
-   // have normals...now encode them
-   mesh->enormals.clear();
-   for (i=0; i<mesh->normals.size(); i++)
-      mesh->enormals.push_back(Mesh::encodeNormal(mesh->normals[i]));
-
    AppConfig::PrintDump(PDObjectStateDetails,avar("%i verts after joining verts\r\n",mesh->verts.size()));
 
    if (mesh->verts.size() * mesh->matFrames != mesh->tverts.size() * mesh->numFrames)
-      setExportError("ShapeMimic::collapseVertices (3)");
-   else if (mesh->verts.size() != mesh->normals.size())
-      setExportError("ShapeMimic::collapseVertices (4)");
+      AppConfig::SetExportError("31", "ShapeMimic::collapseVertices (3)");
+   else if (smooth.size() == 0 && mesh->verts.size() != mesh->normals.size())
+      AppConfig::SetExportError("31", "ShapeMimic::collapseVertices (4)");
 }
 
 void ShapeMimic::computeNormals(std::vector<Primitive> & faces, std::vector<U16> & indices, std::vector<Point3D> & verts, std::vector<Point3D> & norms, std::vector<U32> & smooth, S32 vertsPerFrame, S32 numFrames)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (vertsPerFrame * numFrames != verts.size() || vertsPerFrame!=smooth.size())
    {
-      setExportError("Assertion failed:  vertex number mismatch");
+      AppConfig::SetExportError("32", "Assertion failed:  vertex number mismatch");
       return;
    }
       
@@ -2611,7 +2691,7 @@ void ShapeMimic::computeNormals(std::vector<Primitive> & faces, std::vector<U16>
          Primitive & tsFace = faces[i];
          if ((tsFace.type & Primitive::TypeMask) != Primitive::Triangles)
          {
-            setExportError("Assertion error while computing normals");
+            AppConfig::SetExportError("33", "Assertion error while computing normals");
             return;
          }
          // find the normal to this face
@@ -2709,7 +2789,7 @@ void ShapeMimic::stripify(std::vector<Primitive> & primitives, std::vector<U16> 
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    if (primitives.empty() || indices.empty())
       // shouldn't really have empty meshes...but no harm, no foul (we would, however, cause
@@ -2725,12 +2805,14 @@ void ShapeMimic::stripify(std::vector<Primitive> & primitives, std::vector<U16> 
    {
       if (primitives[i].type == -1)
       {
-         setExportError("Assertion failed when stripping -- negative material index");
+         AppConfig::SetExportError("34", "Assertion failed when stripping -- negative material index");
          return;
       }
-      if ( !((primitives[i].type & ~(Primitive::NoMaterial^Primitive::MaterialMask)) & (Primitive::Triangles|Primitive::Indexed)) || primitives[i].numElements!=3)
+
+      U32 type = primitives[i].type & (Primitive::TypeMask | Primitive::Indexed);
+      if ((type != (Primitive::Triangles | Primitive::Indexed)) || (primitives[i].numElements != 3))
       {
-         setExportError("Assertion failed when stripifying (1)");
+         AppConfig::SetExportError("35", "Assertion failed when stripifying (1)");
          return;
       }
    }
@@ -2751,7 +2833,7 @@ void ShapeMimic::stripify(std::vector<Primitive> & primitives, std::vector<U16> 
    if (AppConfig::GetDumpMask() & PDObjectStateDetails)
    {
       AppConfig::PrintDump(PDObjectStateDetails,avar("Using %s stripping method.\r\n",method));
-      float len = 0.0f;
+      F32 len = 0.0f;
       S32 hi = -1;
       S32 lo = -1;
       for (i=0; i<primitives.size(); i++)
@@ -2762,11 +2844,115 @@ void ShapeMimic::stripify(std::vector<Primitive> & primitives, std::vector<U16> 
          if (lo==-1 || primitives[i].numElements < lo)
             lo = primitives[i].numElements;
       }
-      S32 reversals = len - (startFaces + primitives.size() * 2); // no. of times we needed to reverse order of face by sending extra vert
+      S32 reversals = S32(len) - (startFaces + primitives.size() * 2); // no. of times we needed to reverse order of face by sending extra vert
       if (!primitives.empty())
          len *= 1.0f / (F32)primitives.size();
       AppConfig::PrintDump(PDObjectStateDetails,avar("%i strips with average length %3.2f (range %i to %i) and %i reversals\r\n",primitives.size(),len,lo,hi,reversals));
    }
+}
+
+void ShapeMimic::decimate(Mesh * mesh, F32 percentage)
+{
+   // if already encountered an error, then
+   // we'll just go through the motions
+   if (AppConfig::IsExportError()) return;
+
+   std::vector<Primitive> & faces = mesh->primitives;
+   std::vector<Point3D>   & verts = mesh->verts;
+   std::vector<Point2D>   & tverts = mesh->tverts;
+   std::vector<U16>       & indices = mesh->indices;
+   std::vector<Point3D>   & normals = mesh->normals;
+   std::vector <char>     & enormals = mesh->enormals;
+   std::vector <S32>      & vindex = mesh->vindex;
+   std::vector <S32>      & vbone = mesh->vbone;
+   std::vector <F32>    & vweight = mesh->vweight;
+
+   if (faces.empty() || indices.empty())
+      // shouldn't really have empty meshes...but no harm, no foul (we would, however, cause
+      // problems in the decimator with empty meshes).
+      return;
+
+   S32 startFaces = faces.size();
+   S32 targetFaces = S32(F32(startFaces) * percentage);
+   bool isSkinMesh = vindex.size() > 0;
+
+   // in:  faces better just be faces and better use indexes
+   S32 i;
+   for (i=0; i<faces.size(); i++)
+   {
+      if (faces[i].type == -1)
+      {
+         AppConfig::SetExportError("34", "Assertion failed when decimating -- negative material index");
+         return;
+      }
+      if ( (faces[i].type & ~(Primitive::NoMaterial^Primitive::MaterialMask)) != (Primitive::Triangles|Primitive::Indexed) || faces[i].numElements!=3)
+      {
+         AppConfig::SetExportError("35", "Assertion failed when decimating -- we can only strip indexed triangle meshes");
+         return;
+      }
+   }
+
+   AppConfig::PrintDump(PDObjectStateDetails,avar("%i faces, %i vertices before decimating\r\n",startFaces, verts.size()));
+   AppConfig::PrintDump(PDObjectStateDetails,avar("Targeting %i faces\r\n",targetFaces));
+
+   Decimator fastAndSimple( faces, indices, verts );
+   fastAndSimple.ReduceMesh( targetFaces );
+   fastAndSimple.GetMesh( faces, indices );
+
+   // Cleanup unused vertices
+   std::vector<bool> removed;
+   removed.resize( verts.size(), true );
+   for( i = 0; i < indices.size(); i++ )
+   {
+      removed[ indices[i] ] = false;
+   }
+
+   S32 j = 0;
+   std::vector<S32> maps;
+   maps.resize( verts.size(), -1 );
+   for( i = removed.size() - 1; i >= 0; i-- )
+   {
+      // Compress
+      if( !removed[i] )
+      {
+         maps[i] = j++; // We were going backwards through the list so we will need to invert the map later
+      }
+      else
+      {
+         delElementAtIndex(verts,i);
+         delElementAtIndex(tverts,i);
+         delElementAtIndex(normals,i);
+         delElementAtIndex(enormals,i);
+
+         // Handle vertex bones & weights
+         if(isSkinMesh)
+         {
+            for(S32 k=vindex.size()-1;k>=0; k-- )
+            {
+               if( vindex[k] == i )
+               {
+                  delElementAtIndex(vweight, k);
+                  delElementAtIndex(vindex, k);
+                  delElementAtIndex(vbone, k);
+               }
+            }
+         }
+      }
+   }
+
+   for( i = 0; i < indices.size(); i++ )
+   {
+      indices[i] = j - maps[ indices[i] ] - 1; // We were going backwards through the list so we need to invert the map
+   }
+   if(isSkinMesh)
+   {
+      for( i = 0; i < vindex.size(); i++ )
+      {
+         vindex[i] = j - maps[ vindex[i] ] - 1; // We were going backwards through the list so we need to invert the map
+      }
+   }
+
+	AppConfig::PrintDump(PDObjectStateDetails,avar("%i faces, %i vertices after decimating\r\n",faces.size(), verts.size()));
 }
 
 bool ShapeMimic::vertexSame(Point3D & v1, Point3D & v2, Point2D & tv1, Point2D & tv2, U32 smooth1, U32 smooth2, Point3D & norm1, Point3D & norm2, U32 idx1, U32 idx2, std::vector<U32> * vertId)
@@ -2797,7 +2983,7 @@ void ShapeMimic::convertSortObjects(Shape * shape)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // go through meshes and convert sortObjects when we find them
    for (S32 i=0; i<objectList.size(); i++)
@@ -2805,10 +2991,12 @@ void ShapeMimic::convertSortObjects(Shape * shape)
       ObjectMimic * om = objectList[i];
       for (S32 j=0; j<om->numDetails; j++)
       {
-         if (!om->details[j].mesh || !om->details[j].mesh->sortedObject)
+         if (!om->details[j].mesh || !om->details[j].mesh->sortedObject || om->isSkin)
             continue;
 
          Mesh * sortMesh = om->details[j].mesh->tsMesh;
+
+         AppConfig::PrintDump(PDObjectStateDetails,avar("%i faces, %i vertices before sorting\r\n",sortMesh->primitives.size(), sortMesh->verts.size()));
 
          // get sort data from user properties...
          AppMesh * appMesh = om->details[j].mesh->appMesh;
@@ -2816,14 +3004,19 @@ void ShapeMimic::convertSortObjects(Shape * shape)
          S32 maxDepth = 2;
          bool zLayerUp = false;
          bool zLayerDown = false;
+			bool writeZ = false;
+
          appMesh->getInt("SORT::NUM_BIG_FACES",numBigFaces);
          appMesh->getInt("SORT::MAX_DEPTH",maxDepth);
          appMesh->getBool("SORT::Z_LAYER_UP",zLayerUp);
          appMesh->getBool("SORT::Z_LAYER_DOWN",zLayerDown);
+			appMesh->getBool("write_z",writeZ);
+
+			sortMesh->alwaysWriteDepth = writeZ;
 
          if (zLayerUp && zLayerDown)
          {
-            setExportError("Cannot use both Z_LAYER_UP and Z_LAYER_DOWN.");
+            AppConfig::SetExportError("36", "Cannot use both Z_LAYER_UP and Z_LAYER_DOWN.");
             return;
          }
 
@@ -2833,10 +3026,12 @@ void ShapeMimic::convertSortObjects(Shape * shape)
          std::vector<U32> remap;
          std::vector<U32> smooth(sortMesh->verts.size());
          for (S32 k=0; k<smooth.size(); k++)
-            smooth[k]=1;
+            smooth[k]=0;
          collapseVertices(sortMesh,smooth,remap,NULL);
          sortMesh->numFrames = saveNumFrames;
          sortMesh->vertsPerFrame = 0; // not used
+
+         AppConfig::PrintDump(PDObjectStateDetails,avar("%i faces, %i vertices after sorting\r\n",sortMesh->primitives.size(), sortMesh->verts.size()));
       }
    }
 }
@@ -2889,7 +3084,33 @@ ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return NULL;
+   if (AppConfig::IsExportError()) return NULL;
+
+   ObjectMimic * om;
+
+   // detect MultiRes...
+   std::vector<S32> multiResSize;
+   std::vector<F32> multiResPercent;
+   getMultiResData(node,multiResSize,multiResPercent);
+
+   if (multiResSize.size())
+   {
+      //addMultiRes(node,node);
+      for (S32 i=0; i<multiResSize.size(); i++)
+         // om will be the same for each object
+         om = addObject(node,mesh,validDetails,true,multiResSize[i],multiResPercent[i]);
+   }
+
+   om = addObject(node,mesh,validDetails,false);
+
+	return om;
+}
+
+ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<S32> * validDetails, bool multiRes, S32 multiResSize, F32 multiResPercent)
+{
+   // if already encountered an error, then
+   // we'll just go through the motions
+   if (AppConfig::IsExportError()) return NULL;
 
    ObjectMimic * om;
    const char * name = mesh->getName();
@@ -2899,11 +3120,14 @@ ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<
    S32 size;
    char * objectName = chopTrailingNumber(name,size);
 
-   // artist can set detail level in the user properties if they want...
-   mesh->getInt("Detail",size);
+   if( multiResSize > 0 )
+      size = multiResSize;
+   else
+      // artist can set detail level in the user properties if they want...
+      mesh->getInt("Detail",size);
 
    S32 detailPos;
-   om = getObject(node,mesh,objectName,size,&detailPos);
+   om = getObject(node,mesh,objectName,size,&detailPos,multiResPercent);
    if (!om)
       return NULL;
 
@@ -2914,7 +3138,7 @@ ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<
    // it points to the same place...
    if (om->validDetails && validDetails && validDetails!=om->validDetails)
    {
-      setExportError(avar("Mesh \"%s\" occurs in two different places on the shape.",om->name));
+      AppConfig::SetExportError("37", avar("Mesh \"%s\" occurs in two different places on the shape.",om->name));
       return NULL;
    }
    if (validDetails)
@@ -2926,7 +3150,7 @@ ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<
       // we now know what subtree we belong in -- unless error
       if (om->subtreeNum>=0 && om->subtreeNum != subtrees.size()-1)
       {
-         setExportError(avar("Mesh \"%s\" occurs in two different subtrees on the shape.",om->name));
+         AppConfig::SetExportError("38", avar("Mesh \"%s\" occurs in two different subtrees on the shape.",om->name));
          return NULL;
       }
       om->subtreeNum = subtrees.size() - 1;
@@ -2943,11 +3167,11 @@ ObjectMimic * ShapeMimic::addObject(AppNode * node, AppMesh * mesh, std::vector<
    return om;
 }
 
-ObjectMimic * ShapeMimic::getObject(AppNode * node, AppMesh * mesh, char * name, S32 size, S32 * detailNum, bool matchFull, bool isBone, bool isSkin)
+ObjectMimic * ShapeMimic::getObject(AppNode * node, AppMesh * mesh, char * name, S32 size, S32 * detailNum, F32 multiResPercent, bool matchFull, bool isBone, bool isSkin)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return NULL;
+   if (AppConfig::IsExportError()) return NULL;
 
    S32 i;
 
@@ -3029,12 +3253,15 @@ ObjectMimic * ShapeMimic::getObject(AppNode * node, AppMesh * mesh, char * name,
    // enter data
    S32 dl = om->numDetails++;
    if (om->numDetails>ObjectMimic::MaxDetails)
-   {                               
-      setExportError(avar("Assertion failed:  too many details for mesh %s.",name));
+   {
+      AppConfig::SetExportError("39", avar("Assertion failed:  too many details for mesh %s.",name));
       return NULL;
    }
 
-   AppConfig::PrintDump(PDPass2,avar("Adding mesh of size %i to object \"%s\".\r\n", size,om->name));
+   char multiResString[256] = "";
+   if( multiResPercent < 1.0f )
+      sprintf( multiResString, " from multiRes of %f", multiResPercent);
+   AppConfig::PrintDump(PDPass2,avar("Adding mesh of size %i to object \"%s\"%s.\r\n", size,om->name,multiResString));
 
    // keep meshes sorted by size
    S32 j;
@@ -3044,10 +3271,11 @@ ObjectMimic * ShapeMimic::getObject(AppNode * node, AppMesh * mesh, char * name,
       {
          if (j<dl && om->details[j].size==size)
          {
-            setExportError(avar("Found two meshes named \"%s\" of size %i.\r\n",om->name,size));
+            AppConfig::SetExportError("40", avar("Found two meshes named \"%s\" of size %i.\r\n",om->name,size));
             // avoid crash...
             *detailNum = j;
             om->details[j].size = size;
+            om->details[j].multiResPercent = multiResPercent;
             om->details[j].mesh = NULL;
             return NULL;
          }
@@ -3056,6 +3284,7 @@ ObjectMimic * ShapeMimic::getObject(AppNode * node, AppMesh * mesh, char * name,
          // larger than all that follow us
          // smaller than all that precede us
          om->details[j].size = size;
+         om->details[j].multiResPercent = multiResPercent;
          om->details[j].mesh = new MeshMimic(mesh);
          om->details[j].mesh->billboard = billboard;
          om->details[j].mesh->sortedObject = sortedObject;
@@ -3074,7 +3303,7 @@ void ShapeMimic::addSubtree(AppNode * node)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    subtrees.push_back(new Subtree);
    Subtree * subtree = subtrees.back();
@@ -3137,14 +3366,17 @@ void ShapeMimic::addSubtree(AppNode * node)
       {
          if (validDetails[j]>validDetails[i])
          {
-            S32 tmpInt;
-            const char * tmpCh;
-            tmpInt = validDetails[i];
-            tmpCh = detailNames[i];
+            S32 tmpDetail = validDetails[i];
+            const char *tmpName = detailNames[i];
+            AppNode *tmpNode = detailNodes[i];
+
             validDetails[i] = validDetails[j];
             detailNames[i] = detailNames[j];
-            validDetails[j] = tmpInt;
-            detailNames[j] = tmpCh;
+            detailNodes[i] = detailNodes[j];
+
+            validDetails[j] = tmpDetail;
+            detailNames[j] = tmpName;
+            detailNodes[j] = tmpNode;
          }
       }
    }
@@ -3172,7 +3404,7 @@ void ShapeMimic::addNode(NodeMimic * mimicParent,
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
 
    // if it's the bounds node or a camera, don't do anything
    if (appChild->isBounds())
@@ -3221,14 +3453,40 @@ void ShapeMimic::addSkin(AppMesh * mesh)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return;
+   if (AppConfig::IsExportError()) return;
+
+   // detect MultiRes...
+   std::vector<S32> multiResSize;
+   std::vector<F32> multiResPercent;
+   getMultiResData(mesh,multiResSize,multiResPercent);
+
+   if (multiResSize.size())
+   {
+      //addMultiRes(node,node);
+      for (S32 i=0; i<multiResSize.size(); i++)
+         // om will be the same for each object
+         addSkin(mesh,true,multiResSize[i],multiResPercent[i]);
+   }
+
+   addSkin( mesh, false );
+}
+
+void ShapeMimic::addSkin(AppMesh * mesh, bool multiRes, S32 multiResSize, F32 multiResPercent )
+{
+   // if already encountered an error, then
+   // we'll just go through the motions
+   if (AppConfig::IsExportError()) return;
 
    S32 i,j,k;
 
    skins.push_back(new SkinMimic);
    SkinMimic * skinMimic = skins.back();
    skinMimic->appMesh = mesh;
-   skinMimic->detailSize = getTrailingNumber(mesh->getName());
+   skinMimic->multiResPercent = multiResPercent;
+   if( multiResSize > 0 )
+      skinMimic->detailSize = multiResSize;
+   else
+      skinMimic->detailSize = getTrailingNumber(mesh->getName());
 
    // get offset matrix
    Matrix<4,4,F32> meshTransform = mesh->getMeshTransform(AppTime::DefaultTime());
@@ -3256,7 +3514,25 @@ void ShapeMimic::addSkin(AppMesh * mesh)
       return;
    }
 
-   S32 numVerts = mesh->getNumVerts();
+
+   // generate the faces of the mesh -- will be transfered to objects on subtrees later (as ts objects are generated)
+   AppConfig::PrintDump(PDPass2,avar("Generating faces for skin \"%s\".\r\n",mesh->getName()));
+
+   mesh->generateFaces(skinMimic->faces,
+      skinMimic->verts,
+      skinMimic->tverts,
+      skinMimic->indices,
+      skinMimic->smoothingGroups,
+      skinMimic->normals,
+      &skinMimic->vertId);
+
+   std::vector<U32> vertMap;
+	for( i=0; i<skinMimic->verts.size(); i++ )
+		vertMap.push_back(i);
+
+   if (AppConfig::IsExportError()) return;
+
+   S32 numVerts = skinMimic->verts.size();
    skinMimic->weights.resize(numBones);
    for (i=0; i<skinMimic->weights.size(); i++)
    {
@@ -3266,7 +3542,7 @@ void ShapeMimic::addSkin(AppMesh * mesh)
 
    for (i=0; i<numBones; i++)
       for (j=0; j<numVerts; j++)
-         (*skinMimic->weights[i])[j] = mesh->getWeight(i,j);
+         (*skinMimic->weights[i])[j] = mesh->getWeight(i,vertMap[j]);
 
    // limit number of bones per vertex and apply weight threshhold
    for (i=0;i<skinMimic->weights[0]->size();i++)
@@ -3321,8 +3597,8 @@ void ShapeMimic::addSkin(AppMesh * mesh)
          // delete weight data for this bone
          AppConfig::PrintDump(PDPass2,avar("Deleting skin object  \"%s\" with no weight.\r\n",skinMimic->bones[i]->getName()));
          delete skinMimic->weights[i];
-         delElement(skinMimic->weights,i);
-         delElement(skinMimic->bones,i);
+         delElementAtIndex(skinMimic->weights,i);
+         delElementAtIndex(skinMimic->bones,i);
          i--;
       }
    }
@@ -3330,16 +3606,17 @@ void ShapeMimic::addSkin(AppMesh * mesh)
    MeshMimic * meshMimic = addSkinObject(skinMimic); // goes into object list without node...
 
    // generate the faces of the mesh -- will be transfered to objects on subtrees later (as ts objects are generated)
-   AppConfig::PrintDump(PDPass2,avar("Generating faces for skin \"%s\".\r\n",mesh->getName()));
+//   AppConfig::PrintDump(PDPass2,avar("Generating faces for skin \"%s\".\r\n",mesh->getName()));
 
-   mesh->generateFaces(skinMimic->faces,
-                       skinMimic->verts,
-                       skinMimic->tverts,
-                       skinMimic->indices,
-                       skinMimic->smoothingGroups,
-                       skinMimic->normals,
-                       &skinMimic->vertId);
-   meshMimic->numVerts = mesh->getNumVerts();
+//   mesh->generateFaces(skinMimic->faces,
+//                       skinMimic->verts,
+//                       skinMimic->tverts,
+//                       skinMimic->indices,
+//                       skinMimic->smoothingGroups,
+//                       skinMimic->normals,
+//                       &skinMimic->vertId);
+//   meshMimic->numVerts = mesh->getNumVerts();
+   meshMimic->numVerts = skinMimic->verts.size();
    if (skinMimic->normals.size() == 0)
    {
       skinMimic->normals.resize(meshMimic->numVerts);
@@ -3349,10 +3626,10 @@ void ShapeMimic::addSkin(AppMesh * mesh)
    }
 
    // make sure all the materials are added
-   for (j=0; j<mesh->getNumFaces(); j++)
+   for (j=0; j<skinMimic->faces.size(); j++)
    {
       // add material for face j
-      S32 mi = addFaceMaterial(mesh,j);
+      S32 mi = addFaceMaterial(mesh,skinMimic->faces[j].type&Primitive::NoMaterial ? -1 : skinMimic->faces[j].type&Primitive::MaterialMask);
 
       // replace appmesh material index with ts material index
       skinMimic->faces[j].type &= ~Primitive::MaterialMask;
@@ -3372,7 +3649,7 @@ void ShapeMimic::addSkin(AppMesh * mesh)
          if (mimicNode==&subtree->start)
          {
             // this should just never happen...
-            setExportError("Assertion failed:  Illegal condition.");
+            AppConfig::SetExportError("13", "Assertion failed:  Illegal condition.");
             return;
          }
 
@@ -3402,14 +3679,14 @@ ObjectMimic * ShapeMimic::addBoneObject(AppNode * node, S32 subtreeNum)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return NULL;
+   if (AppConfig::IsExportError()) return NULL;
 
    const char * name = node->getName();
    char * boneName = new char[strlen(name)+20];
    sprintf(boneName,"Bone::%s:",name);
 
    S32 detailPos;
-   ObjectMimic * om = getObject(node,NULL,boneName,0,&detailPos,false,true,false);
+   ObjectMimic * om = getObject(node,NULL,boneName,0,&detailPos,1.0,false,true,false);
 
    return om;
 }
@@ -3418,7 +3695,7 @@ MeshMimic * ShapeMimic::addSkinObject(SkinMimic * skinMimic)
 {
    // if already encountered an error, then
    // we'll just go through the motions
-   if (isError()) return NULL;
+   if (AppConfig::IsExportError()) return NULL;
 
    S32 size;
 
@@ -3428,8 +3705,8 @@ MeshMimic * ShapeMimic::addSkinObject(SkinMimic * skinMimic)
 
    S32 detailPos;
 
-   ObjectMimic * om = getObject(NULL,skinMimic->appMesh,objectName,skinMimic->detailSize,&detailPos,true,false,true);
-   if (isError() || om==NULL) return NULL; // detailPos might not be valid...
+   ObjectMimic * om = getObject(NULL,skinMimic->appMesh,objectName,skinMimic->detailSize,&detailPos,1.0,true,false,true);
+   if (AppConfig::IsExportError() || om==NULL) return NULL; // detailPos might not be valid...
    om->details[detailPos].mesh->skinMimic = skinMimic;
 
    om->subtreeNum = 0; // we'll assume skins are on the first detail...at least for now
@@ -3448,7 +3725,7 @@ void ShapeMimic::dumpShapeNode(Shape * shape, S32 level, S32 nodeIndex, std::vec
 
    // limit level to prevent overflow
    if(level > 160)
-      level = 160;
+    level = 160;
 
    S32 i;
    char space[512];
@@ -3538,7 +3815,10 @@ void ShapeMimic::dumpShape(Shape * shape)
       ss = detail.subshape;
       od = detail.objectDetail;
       sz = (S32)detail.size;
-      AppConfig::PrintDump(PDShapeHierarchy,avar("      %s, Subtree %i, objectDetail %i, size %i\r\n",name,ss,od,sz));
+      if (ss >= 0)
+         AppConfig::PrintDump(PDShapeHierarchy,avar("      %s, Subtree %i, objectDetail %i, size %i\r\n",name,ss,od,sz));
+      else
+         AppConfig::PrintDump(PDShapeHierarchy,avar("      %s, AutoBillboard, size %i\r\n",name,sz));
    }
 
    AppConfig::PrintDump(PDShapeHierarchy,"\r\n   Subtrees:\r\n");
@@ -3569,19 +3849,20 @@ void ShapeMimic::dumpShape(Shape * shape)
    bool foundSkin = false;
    for (i=0; i<shape->objects.size(); i++)
    {
-      if (shape->objects[i].node<0) // must be a skin
+      const Object &obj = shape->objects[i];
+      if (obj.node<0) // must be a skin
       {
          if (!foundSkin)
             AppConfig::PrintDump(PDShapeHierarchy,"\r\n   Skins:\r\n");
          foundSkin=true;
          const char * skinName = "";
-         S32 nameIndex = shape->objects[i].name;
+         S32 nameIndex = obj.name;
          if (nameIndex>=0)
             skinName = nameIndex<0 ? NULL : shape->names[nameIndex].c_str();
          AppConfig::PrintDump(PDShapeHierarchy,avar("      Skin %s with following details: ",skinName));
          for (S32 num=0; num<shape->objects[i].numMeshes; num++)
          {
-            if (shape->meshes[num].getType() != Mesh::T_Null)
+            if (shape->meshes[obj.firstMesh + num].getType() != Mesh::T_Null)
                AppConfig::PrintDump(PDShapeHierarchy,avar(" %i",(S32)shape->detailLevels[num].size));
          }
          AppConfig::PrintDump(PDShapeHierarchy,"\r\n");
@@ -3630,6 +3911,101 @@ void ShapeMimic::dumpShape(Shape * shape)
    }
 }
 
+//--------------------------------------------
+// get multi-res info from a node...
+void ShapeMimic::getMultiResData(AppNode * node, std::vector<S32> & multiResSize, std::vector<F32> & multiResPercent)
+{
+   // if already encountered an error, then
+   // we'll just go through the motions
+   if (AppConfig::IsExportError()) return;
+
+   S32 numAutoDetails = 0;
+	node->getInt( "numAutoDetails", numAutoDetails );
+
+	if( numAutoDetails == 0 )
+		return;
+
+   AppConfig::PrintDump(PDAlways,"Found multiRes data.\r\n");
+
+	multiResSize.resize( numAutoDetails );
+	multiResPercent.resize( numAutoDetails );
+
+	S32 i;
+	for( i = 0; i < numAutoDetails; i++ )
+	{
+		multiResSize[i] = 2;
+		multiResPercent[i] = 1.0f;
+
+		node->getInt( avar( "autoDetailSize%i", i ), multiResSize[i] );
+		node->getFloat( avar( "autoDetailPercent%i", i ), multiResPercent[i] );
+	}
+
+   // make sure percent's are in the right order...sort if they aren't
+   for (i=0; i<multiResSize.size(); i++)
+   {
+      for (S32 j=i+1; j<multiResSize.size(); j++)
+      {
+         if (multiResSize[i]<multiResSize[j])
+         {
+            S32 tmp1 = multiResSize[i];
+            multiResSize[i]=multiResSize[j];
+            multiResSize[j]=tmp1;
+
+            F32 tmp2 = multiResPercent[i];
+            multiResPercent[i]=multiResPercent[j];
+            multiResPercent[j]=tmp2;
+         }
+      }
+   }
+}
+
+//--------------------------------------------
+// get multi-res info from a node...
+void ShapeMimic::getMultiResData(AppMesh * node, std::vector<S32> & multiResSize, std::vector<F32> & multiResPercent)
+{
+   // if already encountered an error, then
+   // we'll just go through the motions
+   if (AppConfig::IsExportError()) return;
+
+   S32 numAutoDetails = 0;
+	node->getInt( "numAutoDetails", numAutoDetails );
+
+	if( numAutoDetails == 0 )
+		return;
+
+   AppConfig::PrintDump(PDAlways,"Found multiRes data.\r\n");
+	
+   multiResSize.resize( numAutoDetails );
+	multiResPercent.resize( numAutoDetails );
+
+	S32 i;
+	for( i = 0; i < numAutoDetails; i++ )
+	{
+		multiResSize[i] = 2;
+		multiResPercent[i] = 1.0f;
+
+		node->getInt( avar( "autoDetailSize%i", i ), multiResSize[i] );
+		node->getFloat( avar( "autoDetailPercent%i", i ), multiResPercent[i] );
+	}
+
+   // make sure size's are in the right order...sort if they aren't
+   for (i=0; i<multiResSize.size(); i++)
+   {
+      for (S32 j=i+1; j<multiResSize.size(); j++)
+      {
+         if (multiResSize[i]<multiResSize[j])
+         {
+            S32 tmp1 = multiResSize[i];
+            multiResSize[i]=multiResSize[j];
+            multiResSize[j]=tmp1;
+
+            F32 tmp2 = multiResPercent[i];
+            multiResPercent[i]=multiResPercent[j];
+            multiResPercent[j]=tmp2;
+         }
+      }
+   }
+}
 
 } // namespace DTS
 

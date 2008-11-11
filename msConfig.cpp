@@ -36,8 +36,8 @@ MsConfig::MsConfig()
    clearConfigLists();
 
    // never export milkshape dummy nodes
-   mNeverExport.push_back(strnew("__meshes"));
-   mNeverExport.push_back(strnew("__mainTree"));
+   mNeverExport.push_back(strnew("base01"));
+   mNeverExport.push_back(strnew("start01"));
 
    setupConfigParams();
 }

@@ -1,15 +1,20 @@
 
-#pragma warning ( disable: 4786 )
+#ifdef _MSC_VER
+#pragma warning ( disable: 4786 4018 )
+#endif
 
 #include "DTSShape.h"
 #include "DTSBrushMesh.h"
 #include "DTSOutputStream.h"
 #include "DTSInputStream.h"
 #include "DTSEndian.h"
+#include "DTSTypes.h"
 
 #include <map>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 // Helper macro -- assumes output stream "out"
 #define writeEndian(a,sz) out.write((char*) &FIX_ENDIAN(a),sz)
@@ -53,8 +58,13 @@ namespace DTS
 
       if (version < 19) 
       {
+#ifdef _WIN32
          MessageBox (NULL, "The DTS file is of a older, unsupported version", "Error", 
                      MB_ICONHAND | MB_OK) ;
+#else
+		 assert(0 && "The DTS file is of a older, unsupported version");
+#endif
+
          return ;
       }
 
@@ -596,11 +606,11 @@ namespace DTS
 
       // write node names
       // -- this is how we will map imported sequence nodes to shape nodes
-      writeEndian(nodes.size(),4);
+      writeEndian((int)nodes.size(),4);
       for (i=0; i<nodes.size(); i++)
       {
          const char * name = names[nodes[i].name].c_str();
-         writeEndian(strlen(name),4);
+         writeEndian((int)strlen(name),4);
          out.write(name,strlen(name));
       }
 
@@ -610,7 +620,7 @@ namespace DTS
       // on import, we will need to adjust keyframe data based on number of
       // nodes/objects in this shape...number of nodes can be inferred from
       // above, but number of objects cannot be.  Write that quantity here:
-      writeEndian(objects.size(),4);
+      writeEndian((int)objects.size(),4);
 
       // initially assume all sequences will be written
       int nodeRotStart = 0;
@@ -746,7 +756,7 @@ namespace DTS
 
          // write sequence name
          const char * seqname = names[seq.nameIndex].c_str();
-         writeEndian(strlen(seqname), 4);
+         writeEndian((int)strlen(seqname), 4);
          out.write((char*)seqname, strlen(seqname));
 
          // skip name index...
@@ -813,7 +823,11 @@ namespace DTS
 
       for (int i = 0 ; i < names.size() ; i++)
       {
-         if (!stricmp(names[i].data(),s.data()))
+#if _WIN32
+         if (!_stricmp(names[i].data(),s.data()))
+#else
+         if (!strcasecmp(names[i].data(),s.data()))
+#endif
             return i ;
       }
       names.push_back(s) ;
@@ -903,14 +917,19 @@ namespace DTS
 
    void Shape::setSmallestSize(int pixels)
    {
-      if (pixels < 1) pixels = 1 ;
-      smallestSize = pixels ;
-      for (int i = 0 ; i < detailLevels.size() ; i++)
+      if (pixels < 1) 
+         pixels = 1;
+      
+      smallestSize = float(pixels);
+
+      int i=0;
+
+      for (i = 0; i < detailLevels.size(); i++)
       {
          if (detailLevels[i].size < pixels)
             break ;
       }
-      smallestDetailLevel = i ;
+      smallestDetailLevel = i;
    }
 
    void Shape::getNodeWorldPosRot(int n, Point &trans, Quaternion &rot)
@@ -930,3 +949,4 @@ namespace DTS
       }
    }
 }
+

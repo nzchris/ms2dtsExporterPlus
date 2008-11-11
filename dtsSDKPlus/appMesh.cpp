@@ -4,12 +4,12 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appMesh.h"
 #include "appTime.h"
-#include "dtsUtil.h"
+#include "DTSUtil.h"
 #include "appIfl.h"
 #include "appConfig.h"
 
@@ -97,17 +97,17 @@ namespace DTS
 
    bool AppMesh::isBillboard()
    {
-      return !strncmp(getName(),"BB::",4) || !strncmp(getName(),"BB_",3);
+      return !strnicmp(getName(),"BB::",4) || !strnicmp(getName(),"BB_",3) || !strnicmp(getName(),"BBZ::",5) || !strnicmp(getName(),"BBZ_",4);
    }
 
    bool AppMesh::isBillboardZAxis()
    {
-      return !strncmp(getName(),"BBZ::",5) || !strncmp(getName(),"BBZ_",4);
+      return !strnicmp(getName(),"BBZ::",5) || !strnicmp(getName(),"BBZ_",4);
    }
 
    bool AppMesh::isSorted()
    {
-      return !strncmp(getName(),"SORT::",6) || !strncmp(getName(),"SORT_",5);
+      return !strnicmp(getName(),"SORT::",6) || !strnicmp(getName(),"SORT_",5);
    }
 
    bool AppMesh::isDummy()
@@ -208,8 +208,6 @@ namespace DTS
    {
       assert(!mLocked && "Mesh is already locked");
 
-      time,objectOffset;
-
       // if more than one mat type, make mats consecutive
       sortFaceList();
 
@@ -236,3 +234,4 @@ namespace DTS
 
 
 }; // namespace DTS
+

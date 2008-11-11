@@ -5,7 +5,7 @@
 
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "nvStripWrap.h"

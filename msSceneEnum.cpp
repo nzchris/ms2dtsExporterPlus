@@ -18,18 +18,33 @@ namespace DTS
       mExporter = exp;
    }
 
+   int MsSceneEnum::addDetail(MilkshapeNode *start01, const char *detailName)
+   {
+      // check if this detail already exists
+      int numChildNodes = start01->getNumChildren();
+      for (int node = 0; node < numChildNodes; node++)
+      {
+         if (strcmp(start01->getChildNode(node)->getName(), detailName) == 0)
+            return node;
+      }
+
+      // add new detail level marker
+      start01->addChildNode(new MilkshapeNode(detailName));
+      return numChildNodes;
+   }
+
    void MsSceneEnum::enumScene()
    {
       // add a 'node' for each milkshape object (sequences, meshes, bones)
 
       // create some helper subtree nodes to organise the shape hierarchy
-      // - bones are added to the 2nd level dummy node ('__meshes')
-      // - detail levels are added to the top level dummy node ('__mainTree')
+      // - bones are added to the 2nd level dummy node ('base01')
+      // - detail levels are added to the top level dummy node ('start01')
       // - rigid meshes are added to the bone to which they are attached
       // - skinned meshes and sequences are added to the root node
-      MilkshapeNode *mainTree = new MilkshapeNode("__mainTree");
-      MilkshapeNode *meshTree = new MilkshapeNode("__meshes");
-      mainTree->addChildNode(meshTree);
+      MilkshapeNode *start01 = new MilkshapeNode("start01");
+      MilkshapeNode *base01 = new MilkshapeNode("base01");
+      start01->addChildNode(base01);
 
       // add bones as children of dummy node
 
@@ -56,7 +71,7 @@ namespace DTS
             tempBones[parent]->addChildNode(tempBones[i]);
          }
          else
-            meshTree->addChildNode(tempBones[i]);
+            base01->addChildNode(tempBones[i]);
       }
 
       // add meshes
@@ -141,17 +156,34 @@ namespace DTS
             tempBones[boneIndex]->addChildNode(mesh);
          }
 
-         // check if this mesh has a new detail level
-         int node;
-         int numChildNodes = mainTree->getNumChildren();
-         for (node = 0; node < numChildNodes; node++)
+         // add the detail level for the mesh
+         addDetail(start01, detailName);
+
+         // add auto-detail levels
+         int numAutoDetails = 0;
+         mesh->getUserPropInt("numAutoDetails", numAutoDetails);
+         for (int j = 0; j < numAutoDetails; j++)
          {
-            if (strcmp(mainTree->getChildNode(node)->getName(), detailName) == 0)
-               break;
+            int size;
+            mesh->getUserPropInt(avar("autoDetailSize%d", j), size);
+            addDetail(start01, avar("detail%d", size));
          }
-         // add new detail level marker
-         if (node >= numChildNodes)
-            mainTree->addChildNode(new MilkshapeNode(detailName));
+
+         // add auto-billboard detail node
+         bool autoBB = false;
+         mesh->getUserPropBool("autoBillboard", autoBB);
+         if (autoBB)
+         {
+            // ensure node exists for auto-billboard detail level
+            S32 size;
+            mesh->getUserPropInt("autoBillboardSize", size);
+            S32 nodeIndex = addDetail(start01, avar("BB::detail%d", size));
+
+            // copy properties from mesh to the auto-billboard detail node
+            char buff[1024+1];
+            mesh->writePropertyString(buff, sizeof(buff)-1);
+            start01->getChildNode(nodeIndex)->readPropertyString(buff);
+         }
       }
 
       // add sequences
@@ -170,10 +202,10 @@ namespace DTS
       }
 
       // add main subtree to root node
-      MsAppNode *msNode = new MsAppNode(mainTree, true);
+      MsAppNode *msNode = new MsAppNode(start01, true);
       if (!processNode(msNode))
       {
-         delete mainTree;
+         delete start01;
          delete msNode;
       }
    }

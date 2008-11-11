@@ -38,8 +38,8 @@ enum PrimType
 struct PrimitiveGroup
 {
 	PrimType type;
-	unsigned int numIndices;
-	unsigned short* indices;
+	U32 numIndices;
+	U16* indices;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -62,7 +62,7 @@ struct PrimitiveGroup
 //
 // Default value: 16
 //
-void SetCacheSize(const unsigned int cacheSize);
+void SetCacheSize(const U32 cacheSize);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,7 @@ void SetStitchStrips(const bool bStitchStrips);
 //
 // Default value: 0
 //
-void SetMinStripSize(const unsigned int minSize);
+void SetMinStripSize(const U32 minSize);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -109,8 +109,8 @@ void SetListsOnly(const bool bListsOnly);
 //
 // Be sure to call delete[] on the returned primGroups to avoid leaking mem
 //
-void GenerateStrips(const unsigned short* in_indices, const unsigned int in_numIndices,
-					PrimitiveGroup** primGroups, unsigned short* numGroups);
+void GenerateStrips(const U16* in_indices, const U32 in_numIndices,
+					PrimitiveGroup** primGroups, U16* numGroups);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ void GenerateStrips(const unsigned short* in_indices, const unsigned int in_numI
 //
 // Credit goes to the MS Xbox crew for the idea for this interface.
 //
-void RemapIndices(const PrimitiveGroup* in_primGroups, const unsigned short numGroups, 
-				  const unsigned short numVerts, PrimitiveGroup** remappedGroups);
+void RemapIndices(const PrimitiveGroup* in_primGroups, const U16 numGroups, 
+				  const U16 numVerts, PrimitiveGroup** remappedGroups);
 
 #endif

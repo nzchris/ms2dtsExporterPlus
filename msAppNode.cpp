@@ -24,19 +24,19 @@ namespace DTS
    MsAppNode::~MsAppNode()
    {
       // only delete milkshape nodes that we own...
-      if (mOwnsNode)
+      if(mOwnsNode)
          delete mMsNode;
    }
 
    void MsAppNode::buildMeshList()
    {
-      if (mMsNode->isMesh())
+      if(mMsNode->isMesh())
          mMeshes.push_back(new MsAppMesh(mMsNode,this));
    }
 
    void MsAppNode::buildChildList()
    {
-      for (int i = 0; i < mMsNode->getNumChildren(); i++)
+      for(int i=0;i<mMsNode->getNumChildren();i++)
       {
          MilkshapeNode *child = mMsNode->getChildNode(i);
          mChildNodes.push_back(new MsAppNode(child));
@@ -46,7 +46,7 @@ namespace DTS
    bool MsAppNode::isEqual(AppNode *node)
    {
       MsAppNode *appNode = dynamic_cast<MsAppNode*>(node);
-      if (appNode)
+      if(appNode)
          return mMsNode->isEqual(appNode->mMsNode);
       else
          return false;
@@ -61,22 +61,27 @@ namespace DTS
 
    bool MsAppNode::animatesTransform(const AppSequenceData & seqData)
    {
-      /// @todo This method is only called for the bounds node, so we
-      /// could check if the 'Bounds' mesh is animated by this
-      /// sequence. For now, use a more basic test...
-      return !seqData.ignoreGround;
+      // check if the node transform changes during the sequence interval
+      // this method is only called for ground transforms, so use groundDelta
+      Matrix<4,4,F32> base = getNodeTransform(seqData.startTime);
+      for (AppTime t = seqData.startTime + seqData.groundDelta; t <= seqData.endTime; t += seqData.groundDelta)
+      {
+         if (getNodeTransform(t) != base)
+            return true;
+      }
+      return false;
    }
 
    const char *MsAppNode::getName()
    {
-      if (!mName)
+      if(!mName)
          mName = strnew(mMsNode->getName());
       return mName;
    }
 
    const char *MsAppNode::getParentName()
    {
-      if (!mParentName)
+      if(!mParentName)
          mParentName = mMsNode->getParentNode() ? strnew(mMsNode->getParentNode()->getName()) : strnew("ROOT");
       return mParentName;
    }

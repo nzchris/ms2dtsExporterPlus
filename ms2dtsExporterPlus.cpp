@@ -12,6 +12,7 @@
 
 #include "HtmlHelp.h"
 
+#include <vector>
 #include <algorithm>
 #include <fstream>
 
@@ -49,6 +50,14 @@ static F32 editValue[2];                  //!< The value being edited
 static msMesh *boundsMesh = NULL;         //!< The temporary bounds mesh
 static msBone *rootBone = NULL;           //!< The temporary root bone
 
+
+struct ListViewColumns
+{
+   char  *name;
+   int   width;
+};
+
+
 //-----------------------------------------------------------------------------
 /// Get a floating point value from a dialog box control
 ///
@@ -78,6 +87,110 @@ static bool IsChecked(HWND hDlg, int nIDDlgItem)
 {
    return (::IsDlgButtonChecked(hDlg, nIDDlgItem) == BST_CHECKED);
 }
+
+/// Functions to copy from a MilkshapeNode user property to a dialog control
+S32 CopyFromUserPropInt(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   S32 value;
+   node->getUserPropInt(propName, value);
+   ::SetDlgItemInt(hDlg, nIDDlgItem, value, TRUE);
+   return value;
+}
+
+bool CopyFromUserPropBool(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   bool value;
+   node->getUserPropBool(propName, value);
+   ::CheckDlgButton(hDlg, nIDDlgItem, value ? BST_CHECKED : BST_UNCHECKED);
+   return value;
+}
+
+F32 CopyFromUserPropFloat(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   F32 value;
+   node->getUserPropFloat(propName, value);
+   ::SetDlgItemText(hDlg, nIDDlgItem, DTS::avar("%g",value));
+   return value;
+}
+
+/// Functions to copy from a dialog control to a MilkshapeNode user property
+S32 CopyToUserPropInt(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   S32 value = ::GetDlgItemInt(hDlg, nIDDlgItem, NULL, FALSE);
+   node->setUserPropInt(propName, value);
+   return value;
+}
+
+bool CopyToUserPropBool(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   bool value = IsChecked(hDlg, nIDDlgItem);
+   node->setUserPropBool(propName, value);
+   return value;
+}
+
+F32 CopyToUserPropFloat(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
+{
+   F32 value = GetDlgItemFloat(hDlg, nIDDlgItem);
+   node->setUserPropFloat(propName, value);
+   return value;
+}
+
+/// Initialise a key/value listview
+///
+/// @param hDlg         Handle to the edit mesh dialog
+/// @param ctrl         List control ID
+/// @param columns      Structure containing name and width data for the list columns
+/// @param firstColumnAlignment  Alignment for the first column (LVCFMT_LEFT or LVCFMT_CENTER)
+static void InitListVewColumns(HWND hDlg, int ctrl, ListViewColumns *columns, int firstColumnAlignment)
+{
+   LVCOLUMN lvc;
+   lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+
+   int col = 0;
+   while (columns[col].name[0])
+   {
+      lvc.iSubItem = col;
+      lvc.pszText = columns[col].name;
+      lvc.cx = columns[col].width;
+      lvc.fmt = (col == 0) ? firstColumnAlignment : LVCFMT_CENTER;
+      ListView_InsertColumn(::GetDlgItem(hDlg, ctrl), col, &lvc);
+      col++;
+   }
+
+   ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, ctrl), LVS_EX_FULLROWSELECT);
+}
+
+/// Update a key/value list box
+///
+/// @param hDlg         Handle to the edit mesh dialog
+/// @param ctrl         List control ID
+/// @param keys         Vector of integer key values
+/// @param values       Vector of floating point values
+static void UpdateKeyValueList(HWND hDlg, int ctrl, const std::vector<S32>& keys, const std::vector<F32>& values)
+{
+   LVITEM lvi;
+   lvi.mask = LVIF_TEXT;
+
+   // clear list
+   HWND listwnd = ::GetDlgItem(hDlg, ctrl);
+   ListView_DeleteAllItems(listwnd);
+
+   for (int i = 0; i < keys.size(); i++)
+   {
+      lvi.iItem = i;
+      lvi.iSubItem = 0;
+
+      char buffer[MaxDlgTextLength+1];
+      lvi.pszText = buffer;
+      sprintf(buffer, "%d", keys[i]);
+      ListView_InsertItem(listwnd, &lvi);
+
+      sprintf(buffer, "%g", values[i]);
+      ListView_SetItemText(listwnd, i, 1, buffer);
+   }
+}
+
+//-----------------------------------------------------------------------------
 
 static void ShowHelp(char *topic)
 {
@@ -110,9 +223,30 @@ static BOOL CALLBACK EditValueProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPara
    switch (msg)
    {
       case WM_INITDIALOG:
+      {
+         // set labels based on what we are editing
+         const char *type = (const char*)lParam;
+         if (strcmp(type, "multires") == 0)
+         {
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_A, "LOD");
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_B, "Percent");
+         }
+         else if (strcmp(type, "vis") == 0)
+         {
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_A, "Frame");
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_B, "Alpha");
+         }
+         else if (strcmp(type, "trigger") == 0)
+         {
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_A, "Frame");
+            ::SetDlgItemText(hDlg, IDC_EDITVAL_B, "State");
+         }
+
+         // set values
          ::SetDlgItemText(hDlg, IDC_VALUE_1, DTS::avar("%g",editValue[0]));
          ::SetDlgItemText(hDlg, IDC_VALUE_2, DTS::avar("%g",editValue[1]));
          break;
+      }
 
       case WM_COMMAND:
 
@@ -133,37 +267,6 @@ static BOOL CALLBACK EditValueProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPara
    return FALSE;
 }
 
-
-/// Update the visibility frame list box
-///
-/// @param hDlg        Handle to the edit mesh dialog
-/// @param numFrames   Number of frames in the input array
-/// @param frames      Pointer to array of frame indices
-/// @param values      Pointer to array of floating point values
-static void UpdateVisFrameList(HWND hDlg, int numFrames, int *frames, F32 *values)
-{
-   LVITEM lvi;
-   lvi.mask = LVIF_TEXT;
-
-   // clear list
-   HWND listwnd = ::GetDlgItem(hDlg, IDC_MESH_VIS_LIST);
-   ListView_DeleteAllItems(listwnd);
-
-   for (int i = 0; i < numFrames; i++)
-   {
-      lvi.iItem = i;
-      lvi.iSubItem = 0;
-
-      char buffer[MaxDlgTextLength+1];
-      lvi.pszText = buffer;
-      sprintf(buffer, "%d", frames[i]);
-      ListView_InsertItem(listwnd, &lvi);
-
-      sprintf(buffer, "%g", values[i]);
-      ListView_SetItemText(listwnd, i, 1, buffer);
-   }
-}
-
 //-----------------------------------------------------------------------------
 /// The dialog proc for the mesh editor
 ///
@@ -175,73 +278,88 @@ static void UpdateVisFrameList(HWND hDlg, int numFrames, int *frames, F32 *value
 /// @return TRUE if the message was processed, FALSE otherwise
 static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
-   static int numVisFrames = 0;
-   static int visFrames[MilkshapeMesh::MaxVisFrames];
-   static F32 visValues[MilkshapeMesh::MaxVisFrames];
+   static std::vector<S32> visFrames;
+   static std::vector<F32> visValues;
+
+   static std::vector<S32> multiresSizes;
+   static std::vector<F32> multiresValues;
 
    switch (msg)
    {
       case WM_INITDIALOG:
       {
          // initialise mesh parameters
-         int lod,numBigFaces,maxDepth;
-         bool sorted,up,down,bb,bbz;
-
-         editMesh->getUserPropInt("lod",lod);
-         editMesh->getUserPropBool("BB",bb);
-         editMesh->getUserPropBool("BBZ",bbz);
-         editMesh->getUserPropBool("sorted",sorted);
-         editMesh->getUserPropBool("SORT::Z_LAYER_UP",up);
-         editMesh->getUserPropBool("SORT::Z_LAYER_DOWN",down);
-         editMesh->getUserPropInt("SORT::NUM_BIG_FACES",numBigFaces);
-         editMesh->getUserPropInt("SORT::MAX_DEPTH",maxDepth);
-
          ::SetDlgItemText(hDlg, IDC_MESH_NAME, editMesh->getName());
-         ::SetDlgItemInt(hDlg,  IDC_MESH_LOD,  lod, TRUE);
-         ::CheckDlgButton(hDlg, IDC_MESH_BB,   bb?BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg, IDC_MESH_BBZ,  bbz?BST_CHECKED:BST_UNCHECKED);
-         ::SetDlgItemInt(hDlg, IDC_MESH_NUMFACES, numBigFaces, FALSE);
-         ::SetDlgItemInt(hDlg, IDC_MESH_MAXDEPTH, maxDepth, FALSE);
+
+         CopyFromUserPropInt(editMesh, "lod", hDlg, IDC_MESH_LOD);
+         CopyFromUserPropBool(editMesh, "BB", hDlg, IDC_MESH_BB);
+         CopyFromUserPropBool(editMesh, "BBZ", hDlg, IDC_MESH_BBZ);
+
+         bool sorted = CopyFromUserPropBool(editMesh, "sorted", hDlg, IDC_MESH_SORT);
+         CopyFromUserPropBool(editMesh, "SORT::Z_LAYER_UP", hDlg, IDC_MESH_UP);
+         CopyFromUserPropBool(editMesh, "SORT::Z_LAYER_DOWN", hDlg, IDC_MESH_DOWN);
+         CopyFromUserPropInt(editMesh, "SORT::NUM_BIG_FACES", hDlg, IDC_MESH_NUMFACES);
+         CopyFromUserPropInt(editMesh, "SORT::MAX_DEPTH", hDlg, IDC_MESH_MAXDEPTH);
+
+         bool autoBB = CopyFromUserPropBool(editMesh, "autoBillboard", hDlg, IDC_MESH_AUTOBB_ENABLE);
+         CopyFromUserPropInt(editMesh, "autoBillboardSize", hDlg, IDC_MESH_AUTOBB_SIZE);
+         CopyFromUserPropInt(editMesh, "BB::EQUATOR_STEPS", hDlg, IDC_MESH_AUTOBB_EQU_STEPS);
+         CopyFromUserPropInt(editMesh, "BB::POLAR_STEPS", hDlg, IDC_MESH_AUTOBB_POLAR_STEPS);
+         CopyFromUserPropInt(editMesh, "BB::DL", hDlg, IDC_MESH_AUTOBB_INDEX);
+         CopyFromUserPropInt(editMesh, "BB::DIM", hDlg, IDC_MESH_AUTOBB_DIM);
+         bool poles = CopyFromUserPropBool(editMesh, "BB::INCLUDE_POLES", hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES);
+         CopyFromUserPropFloat(editMesh, "BB::POLAR_ANGLE", hDlg, IDC_MESH_AUTOBB_POLAR_ANGLE);
 
          ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_UP), sorted);
          ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_DOWN), sorted);
          ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_NUMFACES), sorted);
          ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_MAXDEPTH), sorted);
 
-         if (sorted)
-         {
-            ::CheckDlgButton(hDlg, IDC_MESH_SORT, BST_CHECKED);
-            ::CheckDlgButton(hDlg, IDC_MESH_UP, BST_UNCHECKED);
-            ::CheckDlgButton(hDlg, IDC_MESH_DOWN, BST_UNCHECKED);
-            if (up)
-               ::CheckDlgButton(hDlg, IDC_MESH_UP, BST_CHECKED);
-            else if (down)
-               ::CheckDlgButton(hDlg, IDC_MESH_DOWN, BST_CHECKED);
-         }
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_SIZE), autoBB);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_EQU_STEPS), autoBB);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_POLAR_STEPS), autoBB);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_INDEX), autoBB);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_DIM), autoBB);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES), autoBB && poles);
+         ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_POLAR_ANGLE), autoBB);
 
          // populate visibility channel list box
-         LVCOLUMN lvc;
-         lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-         lvc.cx = 60;
-         lvc.fmt = LVCFMT_LEFT;
+         ListViewColumns visColumns[] = {
+             { "Frame",   60 },
+             { "Alpha",   50 },
+             { "",        0  },
+         };
+         InitListVewColumns(hDlg, IDC_MESH_VIS_LIST, visColumns, LVCFMT_CENTER);
 
-         lvc.iSubItem = 0;
-         lvc.pszText = "Frame";
-         ListView_InsertColumn(::GetDlgItem(hDlg, IDC_MESH_VIS_LIST), 0, &lvc);
-
-         lvc.iSubItem = 1;
-         lvc.pszText = "Alpha";
-         ListView_InsertColumn(::GetDlgItem(hDlg, IDC_MESH_VIS_LIST), 1, &lvc);
-         ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, IDC_MESH_VIS_LIST), LVS_EX_FULLROWSELECT);
-
-         numVisFrames = 0;
+         S32 numVisFrames = 0;
          editMesh->getUserPropInt("numVisFrames", numVisFrames);
+         visFrames.resize(numVisFrames);
+         visValues.resize(numVisFrames);
          for (int i = 0; i < numVisFrames; i++)
          {
             editMesh->getUserPropInt(DTS::avar("visFrame%d", i), visFrames[i]);
             editMesh->getUserPropFloat(DTS::avar("visAlpha%d", i), visValues[i]);
          }
-         UpdateVisFrameList(hDlg, numVisFrames, visFrames, visValues);
+         UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
+
+         // populate multires list box
+         ListViewColumns multiresColumns[] = {
+             { "LOD",     40 },
+             { "Percent", 70 },
+             { "",        0  },
+         };
+         InitListVewColumns(hDlg, IDC_MESH_MULTIRES_LIST, multiresColumns, LVCFMT_CENTER);
+
+         S32 numAutoDetails = 0;
+         editMesh->getUserPropInt("numAutoDetails", numAutoDetails);
+         multiresSizes.resize(numAutoDetails);
+         multiresValues.resize(numAutoDetails);
+         for (i = 0; i < numAutoDetails; i++)
+         {
+            editMesh->getUserPropInt(DTS::avar("autoDetailSize%d", i), multiresSizes[i]);
+            editMesh->getUserPropFloat(DTS::avar("autoDetailPercent%d", i), multiresValues[i]);
+         }
+         UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
 
          return TRUE;
       }
@@ -304,14 +422,10 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                break;
 
             case IDC_MESH_VIS_ADD:
-               if (numVisFrames < MilkshapeMesh::MaxVisFrames)
-               {
-                  // add a new visibility keyframe to the end of the list
-                  visFrames[numVisFrames] = 2;
-                  visValues[numVisFrames] = 1.f;
-                  numVisFrames++;
-                  UpdateVisFrameList(hDlg, numVisFrames, visFrames, visValues);
-               }
+               // add a new visibility keyframe to the end of the list
+               visFrames.push_back(2);
+               visValues.push_back(1.0f);
+               UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
                break;
 
             case IDC_MESH_VIS_EDIT:
@@ -322,11 +436,11 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                {
                   editValue[0] = visFrames[sel];
                   editValue[1] = visValues[sel];
-                  if (::DialogBox(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc) == IDOK)
+                  if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"vis") == IDOK)
                   {
                      visFrames[sel] = (int)editValue[0];
                      visValues[sel] = editValue[1];
-                     UpdateVisFrameList(hDlg, numVisFrames, visFrames, visValues);
+                     UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
                   }
                }
                break;
@@ -336,13 +450,72 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
             {
                // remove the selected visibility frame
                int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_MESH_VIS_LIST));
-               for (int k = sel; k < (numVisFrames-1); k++)
+               if (sel >= 0)
                {
-                  visFrames[k] = visFrames[k+1];
-                  visValues[k] = visValues[k+1];
+                  visFrames.erase(visFrames.begin() + sel);
+                  visValues.erase(visValues.begin() + sel);
+                  UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
                }
-               numVisFrames--;
-               UpdateVisFrameList(hDlg, numVisFrames, visFrames, visValues);
+               break;
+            }
+
+            case IDC_MESH_MULTIRES_ADD:
+               // add a new auto-detail to the end of the list
+               multiresSizes.push_back(2);
+               multiresValues.push_back(1.0f);
+               UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
+               break;
+
+            case IDC_MESH_MULTIRES_EDIT:
+            {
+               // edit the selected auto-detail
+               int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_MESH_MULTIRES_LIST));
+               if (sel >= 0)
+               {
+                  editValue[0] = multiresSizes[sel];
+                  editValue[1] = multiresValues[sel];
+                  if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"multires") == IDOK)
+                  {
+                     multiresSizes[sel] = (int)editValue[0];
+                     multiresValues[sel] = editValue[1];
+                     UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
+                  }
+               }
+               break;
+            }
+
+            case IDC_MESH_MULTIRES_REMOVE:
+            {
+               // remove the selected auto-detail
+               int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_MESH_MULTIRES_LIST));
+               if (sel >= 0)
+               {
+                  multiresSizes.erase(multiresSizes.begin() + sel);
+                  multiresValues.erase(multiresValues.begin() + sel);
+                  UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
+               }
+               break;
+            }
+
+            case IDC_MESH_AUTOBB_ENABLE:
+            {
+               bool enabled = IsChecked(hDlg, IDC_MESH_AUTOBB_ENABLE);
+               bool includePoles = IsChecked(hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES);
+
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_SIZE), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_DIM), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_INDEX), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_EQU_STEPS), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_POLAR_STEPS), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES), enabled);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_POLAR_ANGLE), enabled && includePoles);
+               break;
+            }
+
+            case IDC_MESH_AUTOBB_INCLUDE_POLES:
+            {
+               bool includePoles = IsChecked(hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES);
+               ::EnableWindow(::GetDlgItem(hDlg, IDC_MESH_AUTOBB_POLAR_ANGLE), includePoles);
                break;
             }
 
@@ -356,29 +529,42 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                char buffer[MaxDlgTextLength+1];
                ::GetDlgItemText(hDlg,IDC_MESH_NAME,buffer,MaxDlgTextLength);
                editMesh->setName(buffer);
-               editMesh->setUserPropInt("lod",::GetDlgItemInt(hDlg,IDC_MESH_LOD,NULL,TRUE));
-               editMesh->setUserPropBool("BB", IsChecked(hDlg,IDC_MESH_BB));
-               editMesh->setUserPropBool("BBZ", IsChecked(hDlg,IDC_MESH_BBZ));
 
-               bool sorted = IsChecked(hDlg,IDC_MESH_SORT);
-               editMesh->setUserPropBool("sorted",sorted);
+               CopyToUserPropInt(editMesh, "lod", hDlg, IDC_MESH_LOD);
+               CopyToUserPropBool(editMesh, "BB", hDlg, IDC_MESH_BB);
+               CopyToUserPropBool(editMesh, "BBZ", hDlg, IDC_MESH_BBZ);
 
-               if (sorted)
-               {
-                  editMesh->setUserPropBool("SORT::Z_LAYER_UP", IsChecked(hDlg,IDC_MESH_UP));
-                  editMesh->setUserPropBool("SORT::Z_LAYER_DOWN", IsChecked(hDlg,IDC_MESH_DOWN));
-                  editMesh->setUserPropInt("SORT::NUM_BIG_FACES",::GetDlgItemInt(hDlg,IDC_MESH_NUMFACES,NULL,FALSE));
-                  editMesh->setUserPropInt("SORT::MAX_DEPTH",::GetDlgItemInt(hDlg,IDC_MESH_MAXDEPTH,NULL,FALSE));
-               }
+               CopyToUserPropBool(editMesh, "sorted", hDlg, IDC_MESH_SORT);
+               CopyToUserPropBool(editMesh, "SORT::Z_LAYER_UP", hDlg, IDC_MESH_UP);
+               CopyToUserPropBool(editMesh, "SORT::Z_LAYER_DOWN", hDlg, IDC_MESH_DOWN);
+               CopyToUserPropInt(editMesh, "SORT::NUM_BIG_FACES", hDlg, IDC_MESH_NUMFACES);
+               CopyToUserPropInt(editMesh, "SORT::MAX_DEPTH", hDlg, IDC_MESH_MAXDEPTH);
 
-               // remove old visibility keyframes
+               CopyToUserPropBool(editMesh, "autoBillboard", hDlg, IDC_MESH_AUTOBB_ENABLE);
+               CopyToUserPropInt(editMesh, "autoBillboardSize", hDlg, IDC_MESH_AUTOBB_SIZE);
+               CopyToUserPropInt(editMesh, "BB::EQUATOR_STEPS", hDlg, IDC_MESH_AUTOBB_EQU_STEPS);
+               CopyToUserPropInt(editMesh, "BB::POLAR_STEPS", hDlg, IDC_MESH_AUTOBB_POLAR_STEPS);
+               CopyToUserPropInt(editMesh, "BB::DL", hDlg, IDC_MESH_AUTOBB_INDEX);
+               CopyToUserPropInt(editMesh, "BB::DIM", hDlg, IDC_MESH_AUTOBB_DIM);
+               CopyToUserPropBool(editMesh, "BB::INCLUDE_POLES", hDlg, IDC_MESH_AUTOBB_INCLUDE_POLES);
+               CopyToUserPropFloat(editMesh, "BB::POLAR_ANGLE", hDlg, IDC_MESH_AUTOBB_POLAR_ANGLE);
+
+               // update visibility keyframes
                editMesh->clearVisFrames();
-
-               editMesh->setUserPropInt("numVisFrames", numVisFrames);
-               for (int i = 0; i < numVisFrames; i++)
+               editMesh->setUserPropInt("numVisFrames", visFrames.size());
+               for (int i = 0; i < visFrames.size(); i++)
                {
                   editMesh->setUserPropInt(DTS::avar("visFrame%d", i), visFrames[i]);
                   editMesh->setUserPropFloat(DTS::avar("visAlpha%d", i), visValues[i]);
+               }
+
+               // update auto-details
+               editMesh->clearAutoDetails();
+               editMesh->setUserPropInt("numAutoDetails", multiresSizes.size());
+               for (i = 0; i < multiresSizes.size(); i++)
+               {
+                  editMesh->setUserPropInt(DTS::avar("autoDetailSize%d", i), multiresSizes[i]);
+                  editMesh->setUserPropFloat(DTS::avar("autoDetailPercent%d", i), multiresValues[i]);
                }
 
                ::EndDialog(hDlg, IDOK);
@@ -420,36 +606,23 @@ static BOOL CALLBACK EditMaterialProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
          }
 
          // initialise material parameters
-			float detailScale,reflection;
-         bool add,sub,self,nomip,mipzero,trans;
-
-			editMat->getUserPropFloat("detailScale",detailScale);
-         editMat->getUserPropFloat("reflection",reflection);
-         editMat->getUserPropBool("Additive",add);
-         editMat->getUserPropBool("Subtractive",sub);
-         editMat->getUserPropBool("SelfIlluminating",self);
-         editMat->getUserPropBool("NoMipMap",nomip);
-         editMat->getUserPropBool("MipMapZeroBorder",mipzero);
-         editMat->getUserPropBool("Translucent",trans);
-
          ::SetDlgItemText(hDlg,IDC_MAT_NAME,editMat->getName());
          ::SetDlgItemText(hDlg,IDC_MAT_DETAILMAP,editMat->mDetail ? editMat->mDetail->getName() : "");
          ::SetDlgItemText(hDlg,IDC_MAT_BUMPMAP,editMat->mBump ? editMat->mBump->getName() : "");
          ::SetDlgItemText(hDlg,IDC_MAT_REFLECTMAP,editMat->mReflectance ? editMat->mReflectance->getName() : "");
-         ::SetDlgItemText(hDlg,IDC_MAT_DETAIL_SCALE,DTS::avar("%g",detailScale));
-         ::SetDlgItemText(hDlg,IDC_MAT_ENVMAP,DTS::avar("%g",reflection));
-         ::CheckDlgButton(hDlg,IDC_MAT_ADD,add ? BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_MAT_SUB,sub ? BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_MAT_SELF,self ? BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_MAT_NOMIPMAP,nomip ? BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_MAT_MIPZERO,mipzero ? BST_CHECKED:BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_MAT_TRANSLUCENT,trans ? BST_CHECKED:BST_UNCHECKED);
 
-         if (!trans)
-         {
-            ::EnableWindow(::GetDlgItem(hDlg,IDC_MAT_ADD), FALSE);
-            ::EnableWindow(::GetDlgItem(hDlg,IDC_MAT_SUB), FALSE);
-         }
+         CopyFromUserPropFloat(editMat, "detailScale", hDlg, IDC_MAT_DETAIL_SCALE);
+         CopyFromUserPropFloat(editMat, "reflection", hDlg, IDC_MAT_ENVMAP);
+         CopyFromUserPropBool(editMat, "Additive", hDlg, IDC_MAT_ADD);
+         CopyFromUserPropBool(editMat, "Subtractive", hDlg, IDC_MAT_SUB);
+         CopyFromUserPropBool(editMat, "SelfIlluminating", hDlg, IDC_MAT_SELF);
+         CopyFromUserPropBool(editMat, "NoMipMap", hDlg, IDC_MAT_NOMIPMAP);
+         CopyFromUserPropBool(editMat, "MipMapZeroBorder", hDlg, IDC_MAT_MIPZERO);
+         bool trans = CopyFromUserPropBool(editMat, "Translucent", hDlg, IDC_MAT_TRANSLUCENT);
+         CopyFromUserPropBool(editMat, "doubleSided", hDlg, IDC_MAT_DOUBLE_SIDED);
+
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_MAT_ADD), trans);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_MAT_SUB), trans);
 
          return TRUE;
       }
@@ -490,28 +663,27 @@ static BOOL CALLBACK EditMaterialProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                editMat->setName(buff);
 
                ::GetDlgItemText(hDlg,IDC_MAT_DETAILMAP,buff,MaxDlgTextLength);
-					S32 idx = theExporter->setAuxMaterial(&editMat->mDetail, buff);
-					editMat->setUserPropInt("detail", idx);
+               S32 idx = theExporter->setAuxMaterial(&editMat->mDetail, buff);
+               editMat->setUserPropInt("detail", idx);
 
                ::GetDlgItemText(hDlg,IDC_MAT_BUMPMAP,buff,MaxDlgTextLength);
-					idx = theExporter->setAuxMaterial(&editMat->mBump, buff);
-					editMat->setUserPropInt("bump", idx);
+               idx = theExporter->setAuxMaterial(&editMat->mBump, buff);
+               editMat->setUserPropInt("bump", idx);
 
                ::GetDlgItemText(hDlg,IDC_MAT_REFLECTMAP,buff,MaxDlgTextLength);
-					idx = theExporter->setAuxMaterial(&editMat->mReflectance, buff);
-					editMat->setUserPropInt("reflectance", idx);
+               idx = theExporter->setAuxMaterial(&editMat->mReflectance, buff);
+               editMat->setUserPropInt("reflectance", idx);
 
-               float value = GetDlgItemFloat(hDlg, IDC_MAT_ENVMAP);
-               editMat->setUserPropFloat("reflection",value);
-					value = GetDlgItemFloat(hDlg, IDC_MAT_DETAIL_SCALE);
-					editMat->setUserPropFloat("detailScale",value);
-               editMat->setUserPropBool("NeverEnvMap", value == 0);
-               editMat->setUserPropBool("Additive", IsChecked(hDlg,IDC_MAT_ADD));
-               editMat->setUserPropBool("Subtractive", IsChecked(hDlg,IDC_MAT_SUB));
-               editMat->setUserPropBool("SelfIlluminating", IsChecked(hDlg,IDC_MAT_SELF));
-               editMat->setUserPropBool("NoMipMap", IsChecked(hDlg,IDC_MAT_NOMIPMAP));
-               editMat->setUserPropBool("MipMapZeroBorder", IsChecked(hDlg,IDC_MAT_MIPZERO));
-               editMat->setUserPropBool("Translucent", IsChecked(hDlg,IDC_MAT_TRANSLUCENT));
+               CopyToUserPropFloat(editMat, "detailScale", hDlg, IDC_MAT_DETAIL_SCALE);
+               CopyToUserPropFloat(editMat, "reflection", hDlg, IDC_MAT_ENVMAP);
+               CopyToUserPropBool(editMat, "Additive", hDlg, IDC_MAT_ADD);
+               CopyToUserPropBool(editMat, "Subtractive", hDlg, IDC_MAT_SUB);
+               CopyToUserPropBool(editMat, "SelfIlluminating", hDlg, IDC_MAT_SELF);
+               CopyToUserPropBool(editMat, "NoMipMap", hDlg, IDC_MAT_NOMIPMAP);
+               CopyToUserPropBool(editMat, "MipMapZeroBorder", hDlg, IDC_MAT_MIPZERO);
+               CopyToUserPropBool(editMat, "Translucent", hDlg, IDC_MAT_TRANSLUCENT);
+               CopyToUserPropBool(editMat, "doubleSided", hDlg, IDC_MAT_DOUBLE_SIDED);
+
                ::EndDialog(hDlg, IDOK);
                break;
             }
@@ -574,71 +746,45 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
       case WM_INITDIALOG:
       {
          // initialise sequence parameters
-         int startFrame,endFrame,blendRef;
-         float frameRate,priority,overrideDuration;
-         bool cyclic, blend, ignoreGround;
-         bool enableMorph, enableTVert, enableVis, enableTransform, enableIFL;
-
-         editSeq->getUserPropInt("startFrame",startFrame);
-         editSeq->getUserPropInt("endFrame",endFrame);
-         editSeq->getUserPropInt("blendReferenceFrame",blendRef);
-         editSeq->getUserPropFloat("frameRate",frameRate);
-         editSeq->getUserPropFloat("priority",priority);
-         editSeq->getUserPropFloat("overrideDuration",overrideDuration);
-         editSeq->getUserPropBool("cyclic",cyclic);
-         editSeq->getUserPropBool("blend",blend);
-         editSeq->getUserPropBool("ignoreGround",ignoreGround);
-         editSeq->getUserPropBool("enableMorph",enableMorph);
-         editSeq->getUserPropBool("enableTVert",enableTVert);
-         editSeq->getUserPropBool("enableVis",enableVis);
-         editSeq->getUserPropBool("enableTransform",enableTransform);
-         editSeq->getUserPropBool("enableIFL",enableIFL);
-
          ::SetDlgItemText(hDlg,IDC_SEQ_NAME,editSeq->getName());
-         ::SetDlgItemInt(hDlg,IDC_SEQ_FRAMERATE,(int)frameRate,FALSE);
-         ::SetDlgItemInt(hDlg,IDC_SEQ_PRIORITY,(int)priority,FALSE);
-         ::SetDlgItemInt(hDlg,IDC_SEQ_DURATION,(int)overrideDuration,TRUE);
-         ::SetDlgItemInt(hDlg,IDC_SEQ_STARTFRAME,startFrame,FALSE);
-         ::SetDlgItemInt(hDlg,IDC_SEQ_ENDFRAME,endFrame,FALSE);
-         ::CheckDlgButton(hDlg,IDC_SEQ_CYCLIC, cyclic ? BST_CHECKED : BST_UNCHECKED);
-         if (blend)
-         {
-            ::CheckDlgButton(hDlg,IDC_SEQ_BLEND, BST_CHECKED);
-            ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF),true);
-            ::SetDlgItemInt(hDlg,IDC_SEQ_BLEND_REF,blendRef,FALSE);
-         }
-         else
-         {
-            ::CheckDlgButton(hDlg,IDC_SEQ_BLEND, BST_UNCHECKED);
-            ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF),false);
-         }
-         ::CheckDlgButton(hDlg,IDC_SEQ_IGNOREGND,  ignoreGround ? BST_CHECKED : BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_SEQ_EN_MORPH,   enableMorph ? BST_CHECKED : BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_SEQ_EN_TVERT,   enableTVert ? BST_CHECKED : BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_SEQ_EN_VIS,     enableVis ? BST_CHECKED : BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_SEQ_EN_TRANS,   enableTransform ? BST_CHECKED : BST_UNCHECKED);
-         ::CheckDlgButton(hDlg,IDC_SEQ_EN_IFL,     enableIFL ? BST_CHECKED : BST_UNCHECKED);
 
-         // trigger list columns
-         struct {
-            char* name;
-            int width;
-         } columns[] = {
-             { "Trigger",  60 },
+         CopyFromUserPropFloat(editSeq, "frameRate", hDlg, IDC_SEQ_FRAMERATE);
+         CopyFromUserPropFloat(editSeq, "priority", hDlg, IDC_SEQ_PRIORITY);
+         CopyFromUserPropFloat(editSeq, "overrideDuration", hDlg, IDC_SEQ_DURATION);
+         CopyFromUserPropInt(editSeq, "startFrame", hDlg, IDC_SEQ_STARTFRAME);
+         CopyFromUserPropInt(editSeq, "endFrame", hDlg, IDC_SEQ_ENDFRAME);
+         CopyFromUserPropInt(editSeq, "blendReferenceFrame", hDlg, IDC_SEQ_BLEND_REF);
+
+         CopyFromUserPropBool(editSeq, "cyclic", hDlg, IDC_SEQ_CYCLIC);
+         bool blend = CopyFromUserPropBool(editSeq, "blend", hDlg,IDC_SEQ_BLEND);
+         CopyFromUserPropBool(editSeq, "enableMorph", hDlg, IDC_SEQ_EN_MORPH);
+         CopyFromUserPropBool(editSeq, "enableTVert", hDlg, IDC_SEQ_EN_TVERT);
+         CopyFromUserPropBool(editSeq, "enableVis", hDlg, IDC_SEQ_EN_VIS);
+         CopyFromUserPropBool(editSeq, "enableTransform", hDlg,IDC_SEQ_EN_TRANS);
+         CopyFromUserPropBool(editSeq, "enableIFL", hDlg, IDC_SEQ_EN_IFL);
+
+         bool ignoreGround = CopyFromUserPropBool(editSeq, "ignoreGround", hDlg, IDC_SEQ_IGNOREGND);
+         bool autoGround = CopyFromUserPropBool(editSeq, "autoGround", hDlg, IDC_SEQ_GROUND_AUTO);
+         CopyFromUserPropFloat(editSeq, "groundFrameRate", hDlg, IDC_SEQ_GROUND_FPS);
+         CopyFromUserPropFloat(editSeq, "groundXSpeed", hDlg, IDC_SEQ_GROUND_X);
+         CopyFromUserPropFloat(editSeq, "groundYSpeed", hDlg, IDC_SEQ_GROUND_Y);
+         CopyFromUserPropFloat(editSeq, "groundZSpeed", hDlg, IDC_SEQ_GROUND_Z);
+
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF), blend);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_AUTO), !ignoreGround);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_FPS), !ignoreGround && autoGround);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_X), !ignoreGround && autoGround);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Y), !ignoreGround && autoGround);
+         ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Z), !ignoreGround && autoGround);
+
+         // initialise the list of triggers
+         ListViewColumns trigColumns[] = {
+             { "Trigger", 60 },
              { "Frame",   50 },
              { "State",   50 },
+             { "",        0  },
          };
-
-         LVCOLUMN lvc;
-         lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-         lvc.fmt = LVCFMT_CENTER;
-         for (int ic = 0; ic < 3; ic++)
-         {
-            lvc.iSubItem = ic;
-            lvc.pszText = columns[ic].name;
-            lvc.cx = columns[ic].width;
-            ListView_InsertColumn(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST), ic, &lvc);
-         }
+         InitListVewColumns(hDlg, IDC_SEQ_TRIGGER_LIST, trigColumns, LVCFMT_CENTER);
 
          editSeq->getUserPropInt("numTriggers", numTriggers);
          for (int i = 0; i < numTriggers; i++)
@@ -648,7 +794,6 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
          }
          UpdateTriggerList(hDlg, numTriggers, triggerFrames, triggerStates);
 
-         ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST), LVS_EX_FULLROWSELECT);
          return TRUE;
       }
 
@@ -656,11 +801,32 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
          switch (LOWORD(wParam))
          {
             case IDC_SEQ_BLEND:
-               if (IsChecked(hDlg,IDC_SEQ_BLEND))
-                  ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF),true);
-               else
-                  ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF),false);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_BLEND_REF), IsChecked(hDlg,IDC_SEQ_BLEND));
                break;
+
+            case IDC_SEQ_IGNOREGND:
+            {
+               bool ignoreGround = IsChecked(hDlg,IDC_SEQ_IGNOREGND);
+               bool autoGround = IsChecked(hDlg,IDC_SEQ_GROUND_AUTO);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_AUTO), !ignoreGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_FPS), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_X), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Y), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Z), !ignoreGround && autoGround);
+               break;
+            }
+
+            case IDC_SEQ_GROUND_AUTO:
+            {
+               bool ignoreGround = IsChecked(hDlg,IDC_SEQ_IGNOREGND);
+               bool autoGround = IsChecked(hDlg,IDC_SEQ_GROUND_AUTO);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_AUTO), !ignoreGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_FPS), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_X), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Y), !ignoreGround && autoGround);
+               ::EnableWindow(::GetDlgItem(hDlg,IDC_SEQ_GROUND_Z), !ignoreGround && autoGround);
+               break;
+            }
 
             case IDC_SEQ_TRIGGER_ADD:
                // add a new trigger to the end of the list
@@ -681,7 +847,7 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                {
                   editValue[0] = triggerFrames[sel];
                   editValue[1] = triggerStates[sel];
-                  if (::DialogBox(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc) == IDOK)
+                  if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"trigger") == IDOK)
                   {
                      triggerFrames[sel] = editValue[0];
                      triggerStates[sel] = editValue[1];
@@ -719,26 +885,30 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
             {
                // get new settings
                char buffer[MaxDlgTextLength+1];
-               ::GetDlgItemText(hDlg,IDC_SEQ_NAME,buffer,MaxDlgTextLength);
-
-               float duration = (float)(int)::GetDlgItemInt(hDlg,IDC_SEQ_DURATION,NULL,TRUE);
-
+               ::GetDlgItemText(hDlg, IDC_SEQ_NAME, buffer, MaxDlgTextLength);
                editSeq->setName(buffer);
-               editSeq->setUserPropFloat("frameRate",(float)::GetDlgItemInt(hDlg,IDC_SEQ_FRAMERATE,NULL,FALSE));
-               editSeq->setUserPropFloat("priority",(float)::GetDlgItemInt(hDlg,IDC_SEQ_PRIORITY,NULL,FALSE));
-               editSeq->setUserPropFloat("overrideDuration",(float)(int)::GetDlgItemInt(hDlg,IDC_SEQ_DURATION,NULL,TRUE));
-               editSeq->setUserPropInt("startFrame",::GetDlgItemInt(hDlg,IDC_SEQ_STARTFRAME,NULL,FALSE));
-               editSeq->setUserPropInt("endFrame",::GetDlgItemInt(hDlg,IDC_SEQ_ENDFRAME,NULL,FALSE));
-               editSeq->setUserPropInt("blendReferenceFrame",::GetDlgItemInt(hDlg,IDC_SEQ_BLEND_REF,NULL,FALSE));
 
-               editSeq->setUserPropBool("cyclic", IsChecked(hDlg,IDC_SEQ_CYCLIC));
-               editSeq->setUserPropBool("blend", IsChecked(hDlg,IDC_SEQ_BLEND));
-               editSeq->setUserPropBool("ignoreGround", IsChecked(hDlg,IDC_SEQ_IGNOREGND));
-               editSeq->setUserPropBool("enableMorph", IsChecked(hDlg,IDC_SEQ_EN_MORPH));
-               editSeq->setUserPropBool("enableTVert", IsChecked(hDlg,IDC_SEQ_EN_TVERT));
-               editSeq->setUserPropBool("enableVis", IsChecked(hDlg,IDC_SEQ_EN_VIS));
-               editSeq->setUserPropBool("enableTransform", IsChecked(hDlg,IDC_SEQ_EN_TRANS));
-               editSeq->setUserPropBool("enableIFL", IsChecked(hDlg,IDC_SEQ_EN_IFL));
+               CopyToUserPropFloat(editSeq, "frameRate", hDlg, IDC_SEQ_FRAMERATE);
+               CopyToUserPropFloat(editSeq, "priority", hDlg, IDC_SEQ_PRIORITY);
+               CopyToUserPropFloat(editSeq, "overrideDuration", hDlg, IDC_SEQ_DURATION);
+               CopyToUserPropInt(editSeq, "startFrame", hDlg, IDC_SEQ_STARTFRAME);
+               CopyToUserPropInt(editSeq, "endFrame", hDlg, IDC_SEQ_ENDFRAME);
+               CopyToUserPropInt(editSeq, "blendReferenceFrame", hDlg, IDC_SEQ_BLEND_REF);
+
+               CopyToUserPropBool(editSeq, "cyclic", hDlg,IDC_SEQ_CYCLIC);
+               CopyToUserPropBool(editSeq, "blend", hDlg,IDC_SEQ_BLEND);
+               CopyToUserPropBool(editSeq, "enableMorph", hDlg,IDC_SEQ_EN_MORPH);
+               CopyToUserPropBool(editSeq, "enableTVert", hDlg,IDC_SEQ_EN_TVERT);
+               CopyToUserPropBool(editSeq, "enableVis", hDlg,IDC_SEQ_EN_VIS);
+               CopyToUserPropBool(editSeq, "enableTransform", hDlg,IDC_SEQ_EN_TRANS);
+               CopyToUserPropBool(editSeq, "enableIFL", hDlg,IDC_SEQ_EN_IFL);
+
+               CopyToUserPropBool(editSeq, "ignoreGround", hDlg, IDC_SEQ_IGNOREGND);
+               CopyToUserPropBool(editSeq, "autoGround", hDlg, IDC_SEQ_GROUND_AUTO);
+               CopyToUserPropFloat(editSeq, "groundFrameRate", hDlg, IDC_SEQ_GROUND_FPS);
+               CopyToUserPropFloat(editSeq, "groundXSpeed", hDlg, IDC_SEQ_GROUND_X);
+               CopyToUserPropFloat(editSeq, "groundYSpeed", hDlg, IDC_SEQ_GROUND_Y);
+               CopyToUserPropFloat(editSeq, "groundZSpeed", hDlg, IDC_SEQ_GROUND_Z);
 
                // remove old trigger keyframes
                editSeq->clearTriggers();
@@ -815,13 +985,13 @@ static void UpdateMaterialListBox(HWND hDlg)
 
       // only display materials that are to be exported (either attached to a
       // mesh or used as an auxilary map)
-		if (mat->mRefCount)
-		{
-			lvi.iItem = count++;
+      if (mat->mRefCount)
+      {
+         lvi.iItem = count++;
          lvi.iSubItem = 0;
          lvi.pszText = const_cast<char*>(mat->getName());
          ListView_InsertItem(listwnd, &lvi);
-		}
+      }
    }
 }
 
@@ -884,54 +1054,32 @@ static BOOL CALLBACK ExportDlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPara
          // set window title
          ::SetWindowText(hDlg, "Torque DTSPlus Exporter " VERSION_NUMBER_STR);
 
-         // populate mesh, material and sequence list boxes
-         ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, IDC_MESH_LIST), LVS_EX_FULLROWSELECT);
-         ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, IDC_MAT_LIST), LVS_EX_FULLROWSELECT);
-         ListView_SetExtendedListViewStyle(::GetDlgItem(hDlg, IDC_SEQUENCE_LIST), LVS_EX_FULLROWSELECT);
-
-         struct {
-            char* name;
-            int width;
-         } columns[] = {
-             { "Name",  100 },
-             { "LOD",   40 },
-             { "End",   40 },
-             { "Cyclic",40 },
+         // populate mesh list
+         ListViewColumns meshColumns[] = {
+             { "Name",    100 },
+             { "LOD",     40 },
+             { "",        0  },
          };
-
-         LVCOLUMN lvc;
-         lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-         for (int ic = 0; ic < 2; ic++)
-         {
-            // mesh list columns
-            lvc.iSubItem = ic;
-            lvc.pszText = columns[ic].name;
-            lvc.cx = columns[ic].width;
-            lvc.fmt = (!ic)? LVCFMT_LEFT: LVCFMT_CENTER;
-            ListView_InsertColumn(::GetDlgItem(hDlg, IDC_MESH_LIST), ic, &lvc);
-         }
-         for (ic = 0; ic < 1; ic++)
-         {
-            // material list columns
-            lvc.iSubItem = ic;
-            lvc.pszText = columns[ic].name;
-            lvc.cx = columns[ic].width;
-            lvc.fmt = (!ic)? LVCFMT_LEFT: LVCFMT_CENTER;
-            ListView_InsertColumn(::GetDlgItem(hDlg, IDC_MAT_LIST), ic, &lvc);
-         }
-         columns[1].name = "Start";
-         for (ic = 0; ic < 4; ic++)
-         {
-            // sequence list columns
-            lvc.iSubItem = ic;
-            lvc.pszText = columns[ic].name;
-            lvc.cx = columns[ic].width;
-            lvc.fmt = (!ic)? LVCFMT_LEFT: LVCFMT_CENTER;
-            ListView_InsertColumn(::GetDlgItem(hDlg, IDC_SEQUENCE_LIST), ic, &lvc);
-         }
-
+         InitListVewColumns(hDlg, IDC_MESH_LIST, meshColumns, LVCFMT_LEFT);
          UpdateMeshListBox(hDlg);
+
+         // populate material list
+         ListViewColumns matColumns[] = {
+             { "Name",    100 },
+             { "",        0  },
+         };
+         InitListVewColumns(hDlg, IDC_MAT_LIST, matColumns, LVCFMT_LEFT);
          UpdateMaterialListBox(hDlg);
+
+         // populate sequence list
+         ListViewColumns seqColumns[] = {
+             { "Name",    100 },
+             { "Start",   40  },
+             { "End",     40  },
+             { "Cyclic",  40  },
+             { "",        0  },
+         };
+         InitListVewColumns(hDlg, IDC_SEQUENCE_LIST, seqColumns, LVCFMT_LEFT);
          UpdateSequenceListBox(hDlg);
 
          // set options
@@ -1076,8 +1224,8 @@ static BOOL CALLBACK ProgressDlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
       // initialise progress bar and text
       ::SendDlgItemMessage(hDlg, IDC_PROGRESS_BAR, PBM_SETPOS, 0, 0);
-      ::SendDlgItemMessage(hDlg, IDC_PROGRESS_BAR, PBM_SETRANGE, 0, MAKELPARAM(0, 70));
-      ::SendDlgItemMessage(hDlg, IDC_PROGRESS_BAR, PBM_SETSTEP, 10, 0);
+      ::SendDlgItemMessage(hDlg, IDC_PROGRESS_BAR, PBM_SETRANGE, 0, MAKELPARAM(0, 1000));
+      ::SendDlgItemMessage(hDlg, IDC_PROGRESS_BAR, PBM_SETSTEP, 100, 0);
       ::SetDlgItemText(hDlg, IDC_PROGRESS_TEXT, "");
       return TRUE;
    }
@@ -1119,7 +1267,7 @@ void Ms2dtsExporterPlus::readExportOptions()
    char *p = strtok(commentString, delims);
    while (p)
    {
-      if (sscanf(p, "scale=%f", &s) == 1)
+      if (sscanf(p, "scale=%g", &s) == 1)
          mScale = s;
       else if (sscanf(p, "config=%c", &c) == 1)
          mUseConfig = (c == '1');
@@ -1140,11 +1288,11 @@ void Ms2dtsExporterPlus::readExportOptions()
 
 void Ms2dtsExporterPlus::readMeshList()
 {
-	// initially add all materials (not special materials), but leave mRefCount = 0
-	// as they may not be in use
-	for (int i = 0; i < msModel_GetMaterialCount(mModel); i++)
-	{
-		msMaterial *msMat = msModel_GetMaterialAt(mModel, i);
+   // initially add all materials (not special materials), but leave mRefCount = 0
+   // as they may not be in use
+   for (int i = 0; i < msModel_GetMaterialCount(mModel); i++)
+   {
+      msMaterial *msMat = msModel_GetMaterialAt(mModel, i);
 
       // check for special materials
       char name[MS_MAX_NAME+1];
@@ -1152,10 +1300,10 @@ void Ms2dtsExporterPlus::readMeshList()
       if (strStartsWith(name, "*") || strStartsWith(name, "seq:"))
          continue;
 
-		// create the material
-		MilkshapeMaterial *mat = new MilkshapeMaterial(i);
-		mMaterials.push_back(mat);
-	}
+      // create the material
+      MilkshapeMaterial *mat = new MilkshapeMaterial(i);
+      mMaterials.push_back(mat);
+   }
 
    // read meshes
    for (i = 0; i < msModel_GetMeshCount(mModel); i++)
@@ -1199,31 +1347,31 @@ void Ms2dtsExporterPlus::readMeshList()
       }
    }
 
-	// setup auxilary maps for each material
-	for (i = 0; i < mMaterials.size(); i++)
-	{
-		int detail=-1, bump=-1, reflect=-1;
+   // setup auxilary maps for each material
+   for (i = 0; i < mMaterials.size(); i++)
+   {
+      int detail=-1, bump=-1, reflect=-1;
 
-		mMaterials[i]->getUserPropInt("detail", detail);
-		mMaterials[i]->getUserPropInt("bump", bump);
-		mMaterials[i]->getUserPropInt("reflectance", reflect);
+      mMaterials[i]->getUserPropInt("detail", detail);
+      mMaterials[i]->getUserPropInt("bump", bump);
+      mMaterials[i]->getUserPropInt("reflectance", reflect);
 
-		if ((detail >= 0) && (detail < mMaterials.size()))
-		{
-			mMaterials[i]->mDetail = mMaterials[detail];
-			mMaterials[detail]->mRefCount++;
-		}
-		if ((bump >= 0) && (bump < mMaterials.size()))
-		{
-			mMaterials[i]->mBump = mMaterials[bump];
-			mMaterials[bump]->mRefCount++;
-		}
-		if ((reflect >= 0) && (reflect < mMaterials.size()))
-		{
-			mMaterials[i]->mReflectance = mMaterials[reflect];
-			mMaterials[reflect]->mRefCount++;
-		}
-	}
+      if ((detail >= 0) && (detail < mMaterials.size()))
+      {
+         mMaterials[i]->mDetail = mMaterials[detail];
+         mMaterials[detail]->mRefCount++;
+      }
+      if ((bump >= 0) && (bump < mMaterials.size()))
+      {
+         mMaterials[i]->mBump = mMaterials[bump];
+         mMaterials[bump]->mRefCount++;
+      }
+      if ((reflect >= 0) && (reflect < mMaterials.size()))
+      {
+         mMaterials[i]->mReflectance = mMaterials[reflect];
+         mMaterials[reflect]->mRefCount++;
+      }
+   }
 }
 
 S32 Ms2dtsExporterPlus::setAuxMaterial(MilkshapeMaterial **mat, const char *name) const
@@ -1288,7 +1436,7 @@ void Ms2dtsExporterPlus::applyChanges()
 
    // generate comment string
    char commentString[MAX_COMMENT_LENGTH+1];
-   strcpy(commentString, DTS::avar("scale=%f\r\n", mScale));
+   strcpy(commentString, DTS::avar("scale=%g\r\n", mScale));
    strcat(commentString, DTS::avar("config=%d\r\n", (int)mUseConfig));
    strcat(commentString, DTS::avar("anim=%d\r\n", (int)mExportAnim));
    strcat(commentString, DTS::avar("dump=%d\r\n", (int)mGenDump));
@@ -1431,13 +1579,13 @@ void Ms2dtsExporterPlus::createBounds()
          MilkshapePoint p(vtx->Vertex);
 
          // set min
-         if (p.x() < pMin.x()) pMin.x(p.x() - 1);
-         if (p.y() < pMin.y()) pMin.y(p.y() - 1);
-         if (p.z() < pMin.z()) pMin.z(p.z() - 1);
+         if (p.x() < pMin.x()) pMin.x(p.x());
+         if (p.y() < pMin.y()) pMin.y(p.y());
+         if (p.z() < pMin.z()) pMin.z(p.z());
          // set max
-         if (p.x() > pMax.x()) pMax.x(p.x() + 1);
-         if (p.y() > pMax.y()) pMax.y(p.y() + 1);
-         if (p.z() > pMax.z()) pMax.z(p.z() + 1);
+         if (p.x() > pMax.x()) pMax.x(p.x());
+         if (p.y() > pMax.y()) pMax.y(p.y());
+         if (p.z() > pMax.z()) pMax.z(p.z());
       }
    }
 
@@ -1670,6 +1818,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
    HWND hProgressDlg = ::CreateDialog(hInstance, MAKEINTRESOURCE(IDD_PROGRESS),
                                        ::GetActiveWindow(), ProgressDlgProc);
    ::ShowWindow(hProgressDlg, SW_SHOW);
+   DTS::AppConfig::SetProgressCallback(updateProgress, (void*)hProgressDlg);
 
    //--------------------------------------------------------------------------
    // start out with milkshape default config
@@ -1677,7 +1826,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
    ::SendDlgItemMessage(hProgressDlg, IDC_PROGRESS_BAR, PBM_STEPIT, 0, 0);
 
    DTS::MsConfig defConfig;
-   DTS::AppConfig::setConfig(&defConfig);
+   DTS::AppConfig::SetConfig(&defConfig);
 
    // set up the dump file
    if (mGenDump && !DTS::AppConfig::SetDumpFile(outputFilename, NULL))
@@ -1837,4 +1986,12 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
 void Ms2dtsExporterPlus::alert(const char * title, const char * message) const
 {
    ::MessageBox(::GetActiveWindow(), message, title, MB_OK);
+}
+
+void Ms2dtsExporterPlus::updateProgress(void *arg, F32 minor, F32 major, const char* message)
+{
+   HWND hProgressDlg = (HWND)arg;
+
+   ::SetDlgItemText(hProgressDlg, IDC_PROGRESS_TEXT, message);
+   ::SendDlgItemMessage(hProgressDlg, IDC_PROGRESS_BAR, PBM_SETPOS, (int)((4 + minor)*100), 0);
 }

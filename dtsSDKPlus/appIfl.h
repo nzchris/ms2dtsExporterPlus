@@ -15,15 +15,17 @@ namespace DTS
 {
    class AppIfl
    {
+   protected:
       char * mIflFile;
       std::vector<AppTime> mDurations;
       std::vector<char *> mNames;
 
-      public:
+   public:
 
       // Standard AppIfl just needs a path name to the ifl
       // Can derive from this class, though, in order to support
       // Ifls in a more application dependent manner, if desired.
+      AppIfl() : mIflFile(0) {}
       AppIfl(const char * fullPath);
       virtual ~AppIfl();
 

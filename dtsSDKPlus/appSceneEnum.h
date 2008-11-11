@@ -34,9 +34,9 @@ namespace DTS
 
       ShapeMimic shapeMimic;
     
-      void setExportError(const char * errStr) { AppConfig::SetExportError(errStr); }
-      const char * getError() { return AppConfig::GetExportError(); }
-      bool isError() { return AppConfig::IsExportError(); }
+      //void setExportError(const char * errStr) { AppConfig::SetExportError(errStr); }
+      //const char * getError() { return AppConfig::GetExportError(); }
+      //bool isError() { return AppConfig::IsExportError(); }
 
       virtual bool isSubtree(AppNode * node);
       virtual AppSequence * getSequence(AppNode *);
@@ -45,10 +45,12 @@ namespace DTS
 
    public:
       AppSceneEnum();
-      ~AppSceneEnum();
+      virtual ~AppSceneEnum();
 
-      virtual void enumScene() = 0;      
+      virtual void enumScene() = 0;
       Shape * processScene();
+
+	  virtual void updateStatus( const char *stageName, S32 stageNumber, S32 stageProgress, S32 stageProgressMax );
    };
 
 }; // namespace DTS

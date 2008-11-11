@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appTime.h"
@@ -19,14 +19,14 @@ namespace DTS
    // equality tolerance for f64 component
    F64 AppTime::smTOL = 0.0001;
 
-   // when converting to string, display int? display float?
+   // when converting to string, display S32? display F32?
    bool AppTime::smPrintInt = false;
    bool AppTime::smPrintFloat = true;
 
    const char * AppTime::getStr() const
    {
       if (!mBuffer)
-         const_cast<char*>(mBuffer) = new char[64];
+         const_cast<AppTime*>(this)->mBuffer = new char[64];
       if (smPrintInt && smPrintFloat)
          sprintf(mBuffer,"%f:%i",F32(f64),u32);
       else if (smPrintInt)
@@ -40,3 +40,4 @@ namespace DTS
 
 
 }; // namespace DTS
+

@@ -59,6 +59,10 @@ namespace DTS
       {
          return AppTime(a.f64+b.f64,a.u32+b.u32);
       }
+      friend AppTime operator-(const AppTime & a, const AppTime & b)
+      {
+         return AppTime(a.f64-b.f64,a.u32-b.u32);
+      }
       friend bool operator<(const AppTime & a, const AppTime & b)
       {
          return (a.f64 < b.f64 && a.u32 <= b.u32);

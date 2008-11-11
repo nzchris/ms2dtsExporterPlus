@@ -16,6 +16,7 @@ namespace MsDefaults
    const bool noMipMap           = false;
    const bool mipMapZeroBorder   = false;
    const float detailScale       = 1.f;
+   const bool doubleSided        = false;
 };
 
 

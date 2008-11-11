@@ -70,12 +70,17 @@ MilkshapeSequence::MilkshapeSequence(U32 seqIndex, char *name) : MilkshapeNode(n
    setUserPropBool("blend",false);
    setUserPropFloat("priority", MsDefaults::priority);
    setUserPropFloat("overrideDuration", MsDefaults::overrideDuration);
-   setUserPropBool("ignoreGround", MsDefaults::ignoreGround);
    setUserPropBool("enableMorph",MsDefaults::enableMorph);
    setUserPropBool("enableTVert",MsDefaults::enableTVert);
    setUserPropBool("enableVis",MsDefaults::enableVis);
    setUserPropBool("enableTransform",MsDefaults::enableTransform);
    setUserPropBool("enableIFL",MsDefaults::enableIFL);
+   setUserPropBool("ignoreGround", MsDefaults::ignoreGround);
+   setUserPropBool("autoGround", MsDefaults::autoGround);
+   setUserPropFloat("groundFrameRate", MsDefaults::groundFrameRate);
+   setUserPropFloat("groundXSpeed", MsDefaults::groundXSpeed);
+   setUserPropFloat("groundYSpeed", MsDefaults::groundYSpeed);
+   setUserPropFloat("groundZSpeed", MsDefaults::groundZSpeed);
    clearTriggers();
 
    if (!name)

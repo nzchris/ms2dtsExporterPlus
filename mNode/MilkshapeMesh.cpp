@@ -15,15 +15,6 @@
 using namespace DTS;
 
 
-/// @todo Add support for outstanding mesh properties (are these even used anymore?):
-/// - float BB::POLAR_ANGLE
-/// - int BB::EQUATOR_STEPS
-/// - int BB::POLAR_STEPS
-/// - int BB::DL
-/// - int BB::DIM
-/// - bool BB::INCLUDE_POLES
-
-
 MilkshapeMesh::MilkshapeMesh(U32 meshIndex) : MilkshapeNode("mesh")
 {
    mMeshIndex = meshIndex;
@@ -32,13 +23,26 @@ MilkshapeMesh::MilkshapeMesh(U32 meshIndex) : MilkshapeNode("mesh")
    // set defaults
    setUserPropBool("BB", MsDefaults::bb);
    setUserPropBool("BBZ", MsDefaults::bbz);
+
    setUserPropBool("sorted", MsDefaults::sorted);
    setUserPropBool("SORT::Z_LAYER_UP", MsDefaults::zUp);
    setUserPropBool("SORT::Z_LAYER_DOWN", MsDefaults::zDown);
    setUserPropInt("SORT::NUM_BIG_FACES", MsDefaults::numBigFaces);
    setUserPropInt("SORT::MAX_DEPTH", MsDefaults::maxDepth);
+
    setUserPropInt("lod", MsDefaults::lod);
+
    setUserPropInt("numVisFrames", 0);
+   setUserPropInt("numAutoDetails", 0);
+
+   setUserPropBool("autoBillboard", false);
+   setUserPropInt("autoBillboardSize", MsDefaults::autoBillboardSize);
+   setUserPropInt("BB::EQUATOR_STEPS", MsDefaults::numEquatorSteps);
+   setUserPropInt("BB::POLAR_STEPS", MsDefaults::numPolarSteps);
+   setUserPropInt("BB::DL", MsDefaults::dl);
+   setUserPropInt("BB::DIM", MsDefaults::dim);
+   setUserPropBool("BB::INCLUDE_POLES", MsDefaults::includePoles);
+   setUserPropFloat("BB::POLAR_ANGLE", MsDefaults::polarAngle);
 
    // read properties from comment string
    char commentString[MAX_COMMENT_LENGTH+1] = "";
@@ -163,6 +167,19 @@ Matrix<4,4,F32> MilkshapeMesh::getNodeTransform(S32 frame) const
       // for skinned meshes, return the node transform
       return MilkshapeNode::getNodeTransform(frame);
    }
+}
+
+//--------------------------------------------------------------------------
+void MilkshapeMesh::clearAutoDetails()
+{
+   int numAutoDetails = 0;
+   getUserPropInt("numAutoDetails", numAutoDetails);
+   for (int i = 0; i < numAutoDetails; i++)
+   {
+      mIntMap.erase(DTS::avar("autoDetailSize%d", i));
+      mFloatMap.erase(DTS::avar("autoDetailPercent%d", i));
+   }
+   setUserPropInt("numAutoDetails", 0);
 }
 
 //--------------------------------------------------------------------------

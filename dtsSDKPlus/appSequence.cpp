@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appSequence.h"
@@ -17,10 +17,17 @@ namespace DTS
 
    const char * AppSequenceNode::getName()
    {
-      const char * prefix = "Sequence::";
+      // remove the prefix from the sequence name
       const char * name = mAppNode->getName();
+
+      const char * prefix = "Sequence::";
       if (!strnicmp(name,prefix,strlen(prefix)))
-         name += strlen(prefix);
+         return name + strlen(prefix);
+
+      prefix = "Sequence_";
+      if (!strnicmp(name,prefix,strlen(prefix)))
+         return name + strlen(prefix);
+
       return name;
    }
 
@@ -29,6 +36,7 @@ namespace DTS
       seqData->cyclic = true;
       seqData->blend = false;
       seqData->ignoreGround = false;
+      seqData->autoGround = false;
 
       seqData->enableMorph = false;
       seqData->enableTVert = false;
@@ -62,6 +70,7 @@ namespace DTS
       mAppNode->getBool("cyclic",seqData->cyclic);
       mAppNode->getBool("blend",seqData->blend);
       mAppNode->getBool("ignoreGround",seqData->ignoreGround);
+      mAppNode->getBool("autoGround",seqData->autoGround);
       mAppNode->getBool("enableMorph",seqData->enableMorph);
       mAppNode->getBool("enableTVert",seqData->enableTVert);
       mAppNode->getBool("enableVis",seqData->enableVis);
@@ -93,6 +102,10 @@ namespace DTS
       if (seqData->groundFrameRate<0.000001f)
          seqData->groundFrameRate = 1.0f/10.0f;
 
+      mAppNode->getFloat("groundXSpeed",seqData->groundSpeed[0]);
+      mAppNode->getFloat("groundYSpeed",seqData->groundSpeed[1]);
+      mAppNode->getFloat("groundZSpeed",seqData->groundSpeed[2]);
+
       // convert from frames to times
       F32 appFPS = AppConfig::AppFramesPerSec(); // not necessarily same as exported fps
       F32 startTime = F32(startFrame) / appFPS;
@@ -112,13 +125,11 @@ namespace DTS
       F32 groundDelta = 0.0f;
 
       // Get sequence timing information
-      if (mAppNode->getInt("numFrames",seqData->numFrames) && seqData->numFrames>0)
-         seqData->numFrames--;
-      else
+      mAppNode->getInt("numFrames",seqData->numFrames);
+      if (seqData->numFrames <= 0)
          seqData->numFrames = (S32) ((duration + 0.25f/seqData->frameRate) * seqData->frameRate);
       delta = seqData->numFrames ? duration / F32(seqData->numFrames) : duration;
-      if (!seqData->cyclic)
-         seqData->numFrames++;
+      seqData->numFrames++;
 
       // Get sequence ground timing information
       if (mAppNode->getInt("groundNumFrames",seqData->groundNumFrames) && seqData->groundNumFrames>1)
@@ -190,7 +201,7 @@ namespace DTS
          seq->flags |= Sequence::Cyclic;
       if (seqData.blend)
          seq->flags |= Sequence::Blend;
-      seq->priority = seqData.priority;
+     seq->priority = S32(seqData.priority);
       seq->numKeyFrames = seqData.numFrames;
       seq->duration = seqData.overrideDuration>0 ? seqData.overrideDuration : actualDuration;
       seq->toolBegin = actualStart;

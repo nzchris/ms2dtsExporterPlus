@@ -1,5 +1,8 @@
 
-#pragma warning ( disable: 4786 )
+#ifdef _MSC_VER
+#pragma warning ( disable: 4786 4018 )
+#endif
+
 #include <vector>
 #include <cmath>
 
@@ -365,8 +368,6 @@ namespace DTS
 
       // Texture coordinates
 
-      assert (tverts.size() == verts.size()) ;
-
       stream << (int) tverts.size() ;
       stream << tverts ;
 
@@ -440,7 +441,7 @@ namespace DTS
          stream << (int) firstTVerts.size();
 	      stream << firstTVerts;
 	      
-	      stream << (int) 0; // alwaysWriteDepth deprecated
+	      stream << (int) alwaysWriteDepth; // alwaysWriteDepth deprecated
 	      
 	      stream.storeCheck();
       }

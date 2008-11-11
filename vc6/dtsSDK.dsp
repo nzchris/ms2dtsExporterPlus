@@ -88,7 +88,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "../out.VC6.HYBRID"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GR /GX /ZI /Od /I "../engine" /I "../dtsSDK" /D "TORQUE_DEBUG" /YX /FD /GZ /c
-# ADD CPP /nologo /MT /W3 /Gm /GR /GX /ZI /Od /I "../dtsSDK" /D "TORQUE_DEBUG" /FD /GZ /c
+# ADD CPP /nologo /MT /W3 /Gm /GR /GX /ZI /Od /I "../dtsSDK" /D "TORQUE_DEBUG" /FR /FD /GZ /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"

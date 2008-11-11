@@ -202,17 +202,15 @@ namespace DTS
    {
       assert(!mLocked && "Mesh is locked");
 
-      /// @todo Need to check if this mesh is actually animated. Is
-      /// it safe just to return true? This function is only used
-      /// for morph animations, so it probably doesn't matter.
-      return true;
+      /// Morph animation is not supported
+      return false;
    }
 
    bool MsAppMesh::animatesMatFrame(const AppSequenceData & seqData)
    {
       assert(!mLocked && "Mesh is locked");
 
-      /// @todo Add support for material animations
+      /// UV animation is not supported
       return false;
    }
 
@@ -238,9 +236,9 @@ namespace DTS
       S32 vCount = msMesh_GetVertexCount(mesh);
 
       // Transform the vertices by the bounds and scale
-	  std::vector<Point3D> verts(vCount, Point3D());
+      std::vector<Point3D> verts(vCount, Point3D());
 
-	  for (int i = 0; i < vCount; i++)
+      for (int i = 0; i < vCount; i++)
          verts[i] = objectOffset * (getVert(mesh, i) * mMsNode->getScale());
 
       for (i = 0; i < mFaces.size();i++)
@@ -249,7 +247,8 @@ namespace DTS
          Primitive &tsFace = mFaces[i];
 
          // set faces material index
-         tsFace.type = msMesh_GetMaterialIndex(mesh);
+         S32 matIndex = msMesh_GetMaterialIndex(mesh);
+         tsFace.type = (matIndex >= 0) ? matIndex : Primitive::NoMaterial;
          tsFace.firstElement = mIndices.size();
          tsFace.numElements = 3;
          tsFace.type |= Primitive::Triangles | Primitive::Indexed;
@@ -275,6 +274,26 @@ namespace DTS
          mIndices.push_back(addVertex(vert0,norm0,tvert0,vertIndices[0]));
          mIndices.push_back(addVertex(vert2,norm2,tvert2,vertIndices[2]));
          mIndices.push_back(addVertex(vert1,norm1,tvert1,vertIndices[1]));
+
+         // if the material is double-sided, add the backface as well
+         if (!(tsFace.type & Primitive::NoMaterial))
+         {
+            bool doubleSided = false;
+            MilkshapeMaterial *msMat = mMsNode->getMaterial();
+            msMat->getUserPropBool("doubleSided", doubleSided);
+
+            if (doubleSided)
+            {
+               Primitive backface = tsFace;
+               backface.firstElement = mIndices.size();
+               mFaces.push_back(backface);
+
+               // add verts with order reversed to get the backface
+               mIndices.push_back(addVertex(vert0,-norm0,tvert0,vertIndices[0]));
+               mIndices.push_back(addVertex(vert2,-norm2,tvert2,vertIndices[2]));
+               mIndices.push_back(addVertex(vert1,-norm1,tvert1,vertIndices[1]));
+            }
+         }
       }
 
       return Parent::lockMesh(time,objectOffset);

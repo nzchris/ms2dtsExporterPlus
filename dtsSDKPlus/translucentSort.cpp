@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "translucentSort.h"
@@ -35,6 +35,11 @@ TranslucentSort::TranslucentSort(std::vector<Primitive> & faces,
    mZLayerDown = zLayerDown;
    bigFaces.clear();
    bigFaceSizes.clear();
+
+	splitK = 0.0f;
+	splitNormal.x(0.0f);
+	splitNormal.y(0.0f);
+	splitNormal.z(0.0f);
 
    initFaces();
    frontSort = backSort = NULL;
@@ -114,7 +119,7 @@ void TranslucentSort::sort()
          }
       
       // 2. select faces with no one in front of them -- these guys get drawn last
-      insElement(frontClusters,0,new IntegerSet);
+      insElementAtIndex(frontClusters,0,new IntegerSet);
       frontClusters.front()->resize(mFaces.size());
       for (i=0; i<faceInfoList.size(); i++)
          if (!faceInfoList[i]->used && !allSet(faceInfoList[i]->isInFrontOfMe) && !allSet(faceInfoList[i]->isCutByMe))
@@ -161,7 +166,7 @@ void TranslucentSort::sort()
             continue;
          if (faceInfoList[i]->priority == priority)
          {
-            if ( (cut>fewestCuts) || (cut==fewestCuts && fabs(front-back)>=balance) )
+            if ( (cut>fewestCuts) || (cut==fewestCuts && abs(front-back)>=balance) )
                continue;
          }
       }
@@ -169,7 +174,7 @@ void TranslucentSort::sort()
       cutFace = i;
       fewestCuts = cut;
       priority = faceInfoList[i]->priority;
-      balance = fabs(front-back);
+      balance = abs(front-back);
    }
 
    if (cutFace>=0 && currentDepth<mMaxDepth)
@@ -340,7 +345,7 @@ void TranslucentSort::copeSort(std::vector<S32> & cluster)
       if (bestFace>=0)
       {
          if (front)
-            insElement(frontOrderedCluster,0,bestFace);
+            insElementAtIndex(frontOrderedCluster,0,bestFace);
          else
             backOrderedCluster.push_back(bestFace);
          IntegerSet disableSet;
@@ -444,8 +449,8 @@ void TranslucentSort::layerSort(std::vector<S32> & cluster, bool pointUp)
             for (j=0; j<upZ.size(); j++)
                if (sortBy<upZ[j])
                   break;
-            insElement(upZ,j,sortBy);
-            insElement(upCluster,j,i);
+            insElementAtIndex(upZ,j,sortBy);
+            insElementAtIndex(upCluster,j,i);
          }
       }
       else
@@ -463,8 +468,8 @@ void TranslucentSort::layerSort(std::vector<S32> & cluster, bool pointUp)
             for (j=0; j<downZ.size(); j++)
                if (sortBy>downZ[j])
                   break;
-            insElement(downZ,j,sortBy);
-            insElement(downCluster,j,i);
+            insElementAtIndex(downZ,j,sortBy);
+            insElementAtIndex(downCluster,j,i);
          }
       }
    }
@@ -573,8 +578,8 @@ void TranslucentSort::initFaceInfo(Primitive & face, FaceInfo & faceInfo, bool s
       {
          if (i==bigFaceSizes.size() || maxExtent>bigFaceSizes[i])
          {
-            insElement(bigFaceSizes,i,maxExtent);
-            insElement(bigFaces,i,(S32)(&face-&mFaces[0]));
+            insElementAtIndex(bigFaceSizes,i,maxExtent);
+            insElementAtIndex(bigFaces,i,(S32)(&face-&mFaces[0]));
 
             for (; i<bigFaceSizes.size(); i++)
                faceInfoList[bigFaces[i]]->priority = i<mNumBigFaces ? mNumBigFaces-i : 0;
@@ -591,15 +596,10 @@ void TranslucentSort::initFaceInfo(Primitive & face, FaceInfo & faceInfo, bool s
 
 void TranslucentSort::setFaceInfo(Primitive & face, FaceInfo & faceInfo)
 {
-   faceInfo.isInFrontOfMe.resize(mFaces.size());
-   faceInfo.isBehindMe.resize(mFaces.size());
-   faceInfo.isCutByMe.resize(mFaces.size());
-   faceInfo.isCoplanarWithMe.resize(mFaces.size());
-
-   setMembershipArray(faceInfo.isInFrontOfMe,false,0,faceInfo.isInFrontOfMe.size());
-   setMembershipArray(faceInfo.isBehindMe,false,0,faceInfo.isBehindMe.size());
-   setMembershipArray(faceInfo.isCutByMe,false,0,faceInfo.isCutByMe.size());
-   setMembershipArray(faceInfo.isCoplanarWithMe,false,0,faceInfo.isCoplanarWithMe.size());
+   setMembershipArray(faceInfo.isInFrontOfMe,false,0,mFaces.size());
+   setMembershipArray(faceInfo.isBehindMe,false,0,mFaces.size());
+   setMembershipArray(faceInfo.isCutByMe,false,0,mFaces.size());
+   setMembershipArray(faceInfo.isCoplanarWithMe,false,0,mFaces.size());
 
    Point3D & normal = faceInfo.normal;
    F32 & k = faceInfo.k;
@@ -1018,7 +1018,7 @@ void TranslucentSort::addOrderedFaces(std::vector<S32> & orderedCluster, std::ve
          {
             if (dotProduct(noAddNormals[k],faceInfoList[toAdd[i]]->normal) > 0.99f)
             {
-               delElement(toAdd,i);
+               delElementAtIndex(toAdd,i);
                i--;
                break;
             }
@@ -1039,7 +1039,7 @@ void TranslucentSort::addOrderedFaces(std::vector<S32> & orderedCluster, std::ve
          indices.push_back(mIndices[mFaces[toAdd[i]].firstElement+0]);
          indices.push_back(mIndices[mFaces[toAdd[i]].firstElement+1]);
          indices.push_back(mIndices[mFaces[toAdd[i]].firstElement+2]);
-         delElement(toAdd,i);
+         delElementAtIndex(toAdd,i);
          i--;
       }
       startNewFace = true;
@@ -1143,16 +1143,16 @@ void TranslucentSort::generateSortedMesh(Mesh * mesh, S32 numBigFaces, S32 maxDe
       {
          std::vector<Primitive> faces = mesh->primitives;
          std::vector<U16> indices = mesh->indices;
-         std::vector<Point3D> verts;
-         std::vector<Point3D> norms;
-         std::vector<Point2D> tverts;
+         std::vector<Point3D> verts(&mesh->verts[i*mesh->vertsPerFrame],&mesh->verts[i*mesh->vertsPerFrame+mesh->vertsPerFrame]);
+         std::vector<Point3D> norms(&mesh->normals[i*mesh->vertsPerFrame],&mesh->normals[i*mesh->vertsPerFrame+mesh->vertsPerFrame]);
+         std::vector<Point2D> tverts(&mesh->tverts[i*mesh->vertsPerFrame],&mesh->tverts[i*mesh->vertsPerFrame+mesh->vertsPerFrame]);
          std::vector<Cluster> clusters;
-         verts.resize(mesh->vertsPerFrame);
-         memcpy(&verts[0],&mesh->verts[i*mesh->vertsPerFrame],sizeof(Point3D)*mesh->vertsPerFrame);
-         norms.resize(mesh->vertsPerFrame);
-         memcpy(&norms[0],&mesh->normals[i*mesh->vertsPerFrame],sizeof(Point3D)*mesh->vertsPerFrame);
-         tverts.resize(mesh->vertsPerFrame);
-         memcpy(&tverts[0],&mesh->tverts[i*mesh->vertsPerFrame],sizeof(Point2D)*mesh->vertsPerFrame);
+         //verts.resize(mesh->vertsPerFrame);
+         //memcpy(&verts[0],&mesh->verts[i*mesh->vertsPerFrame],sizeof(Point3D)*mesh->vertsPerFrame);
+         //norms.resize(mesh->vertsPerFrame);
+         //memcpy(&norms[0],&mesh->normals[i*mesh->vertsPerFrame],sizeof(Point3D)*mesh->vertsPerFrame);
+         //tverts.resize(mesh->vertsPerFrame);
+         //memcpy(&tverts[0],&mesh->tverts[i*mesh->vertsPerFrame],sizeof(Point2D)*mesh->vertsPerFrame);
 
          TranslucentSort sort(faces,indices,verts,norms,tverts,numBigFaces,maxDepth,zLayerUp,zLayerDown);
          sort.sort();
@@ -1178,7 +1178,7 @@ void TranslucentSort::generateSortedMesh(Mesh * mesh, S32 numBigFaces, S32 maxDe
                   if (clusters[l].backCluster>k)
                      clusters[l].backCluster--;
                }
-               delElement(clusters,k);
+               delElementAtIndex(clusters,k);
                k = -1; // start over, our parent may now be useless...
             }
          }

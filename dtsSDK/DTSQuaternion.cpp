@@ -1,5 +1,8 @@
 
-#pragma warning ( disable: 4786 )
+#ifdef _MSC_VER
+#pragma warning ( disable: 4786 4018 )
+#endif
+
 #include <vector>
 #include <cmath>
 
@@ -138,3 +141,4 @@ namespace DTS
    }
 
 }
+

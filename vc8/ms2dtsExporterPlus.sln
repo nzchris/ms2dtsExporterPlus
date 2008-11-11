@@ -1,0 +1,46 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtsSDK", "dtsSDK.vcproj", "{048153A2-B1E8-48F5-9648-89B851B14AB0}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtsSDKPlus", "dtsSDKPlus.vcproj", "{4F18DB72-B2E8-409A-802A-3B39CC3510C9}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ms2dtsExporterPlus", "ms2dtsExporterPlus.vcproj", "{C7B4134B-3D0A-44E8-8821-72AB3D54963C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9} = {4F18DB72-B2E8-409A-802A-3B39CC3510C9}
+		{048153A2-B1E8-48F5-9648-89B851B14AB0} = {048153A2-B1E8-48F5-9648-89B851B14AB0}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Hybrid = Hybrid
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Debug.ActiveCfg = Debug|Win32
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Debug.Build.0 = Debug|Win32
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Hybrid.ActiveCfg = Hybrid|Win32
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Hybrid.Build.0 = Hybrid|Win32
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Release.ActiveCfg = Release|Win32
+		{048153A2-B1E8-48F5-9648-89B851B14AB0}.Release.Build.0 = Release|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Debug.ActiveCfg = Debug|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Debug.Build.0 = Debug|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Hybrid.ActiveCfg = Hybrid|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Hybrid.Build.0 = Hybrid|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Release.ActiveCfg = Release|Win32
+		{4F18DB72-B2E8-409A-802A-3B39CC3510C9}.Release.Build.0 = Release|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Debug.ActiveCfg = Debug|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Debug.Build.0 = Debug|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Hybrid.ActiveCfg = Release|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Hybrid.Build.0 = Release|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Release.ActiveCfg = Release|Win32
+		{C7B4134B-3D0A-44E8-8821-72AB3D54963C}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

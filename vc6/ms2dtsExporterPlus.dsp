@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib msModelLib.lib dtsSDK.lib dtsSDKPlus.lib htmlhelp.lib /nologo /dll /machine:I386 /out:"C:\Program Files\MilkShape 3D 1.7.8\ms2dtsExporterPlus.dll" /libpath:"..\msLIB\lib6" /libpath:"..\msLIB" /libpath:"..\out.vc6.RELEASE"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib msModelLib.lib dtsSDK.lib dtsSDKPlus.lib htmlhelp.lib /nologo /dll /machine:I386 /out:"C:\Program Files\MilkShape 3D 1.8.3\ms2dtsExporterPlus.dll" /libpath:"..\msLIB\lib" /libpath:"..\msLIB" /libpath:"..\out.vc6.RELEASE"
 
 !ELSEIF  "$(CFG)" == "ms2dtsExporterPlus - Win32 Debug"
 
@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib msModelLib.lib dtsSDK_DEBUG.lib dtsSDKPlus_DEBUG.lib htmlhelp.lib /nologo /dll /debug /machine:I386 /out:"C:\Program Files\MilkShape 3D 1.7.8\ms2dtsExporterPlus_DEBUG.dll" /pdbtype:sept /libpath:"..\msLIB\lib6" /libpath:"..\msLIB" /libpath:"..\out.vc6.DEBUG"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib msModelLib.lib dtsSDK_DEBUG.lib dtsSDKPlus_DEBUG.lib htmlhelp.lib /nologo /dll /debug /machine:I386 /out:"C:\Program Files\MilkShape 3D 1.8.3\ms2dtsExporterPlus.dll" /pdbtype:sept /libpath:"..\msLIB\lib" /libpath:"..\msLIB" /libpath:"..\out.vc6.DEBUG"
 
 !ENDIF 
 

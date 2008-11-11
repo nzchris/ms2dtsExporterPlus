@@ -16,14 +16,16 @@ namespace DTS
    protected:
       Ms2dtsExporterPlus *mExporter;   //!< Pointer to the exporter object
 
+      int addDetail(MilkshapeNode *start01, const char *detailName);
+
    public:
       MsSceneEnum(Ms2dtsExporterPlus *exp);
 
       /// <PRE>
       /// ROOT
-      /// |-dummy
+      /// |-start01
       /// |  |-LOD markers
-      /// |  |-dummy
+      /// |  |-base01
       /// |     |-rigid meshes
       /// |     |-skeleton
       /// |

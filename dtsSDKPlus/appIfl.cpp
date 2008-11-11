@@ -4,10 +4,9 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
-#include "appConfig.h"
 #include "appIfl.h"
 #include "DTSUtil.h"
 #include <fstream>
@@ -34,12 +33,12 @@ namespace DTS
          if (num==1)
          {
             mNames.push_back(strnew(name));
-            mDurations.push_back(AppTime(1.0f/AppConfig::AppFramesPerSec(),0));
+            mDurations.push_back(AppTime(1.0f/30.0f,0));
          }
          else if (num==2)
          {
             mNames.push_back(strnew(name));
-            mDurations.push_back(AppTime(F32(duration)/AppConfig::AppFramesPerSec(),0));
+            mDurations.push_back(AppTime(F32(duration)/30.0f,0));
          }
       }
    }

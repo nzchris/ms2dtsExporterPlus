@@ -39,6 +39,7 @@ namespace DTS
       S32 detailSize;
       S32 skinNum;
       S32 meshNum;
+      F32 multiResPercent;
    
       std::vector<Primitive> faces;
       std::vector<Point3D> verts;
@@ -51,7 +52,7 @@ namespace DTS
       std::vector<AppNode *> bones;
       std::vector<WeightList*> weights;
       
-      ~SkinMimic() { for (S32 i=0;i<weights.size(); i++) delete weights[i]; }
+      ~SkinMimic() { for (U32 i=0;i<weights.size(); i++) delete weights[i]; multiResPercent = 1.0f; }
    };
 
    struct MeshMimic
@@ -67,9 +68,11 @@ namespace DTS
       std::vector<U32> remap;
       std::vector<U32> vertId;
    
+      F32 multiResPercent;
+
       Matrix<4,4,F32> objectOffset; // NOTE: not valid till late in the game
    
-      MeshMimic(AppMesh * mesh) { appMesh = mesh; skinMimic = NULL; tsMesh = NULL; }
+      MeshMimic(AppMesh * mesh) { appMesh = mesh; skinMimic = NULL; tsMesh = NULL; multiResPercent = 1.0f; }
    };
 
    struct ObjectMimic
@@ -78,6 +81,7 @@ namespace DTS
       struct Detail
       {
          S32 size;
+         F32 multiResPercent;
          MeshMimic * mesh;
       };
    
@@ -190,9 +194,9 @@ namespace DTS
       static std::vector<AppNode*> cutNodesParents;
        
       // error control
-      void setExportError(const char * errStr) { AppConfig::SetExportError(errStr); }
-      const char * getError() { return AppConfig::GetExportError(); }
-      bool isError() { return AppConfig::IsExportError(); }
+      //void setExportError(const char * errStr) { AppConfig::SetExportError(errStr); }
+      //const char * getError() { return AppConfig::GetExportError(); }
+      //bool isError() { return AppConfig::IsExportError(); }
    
       // called by generateShape
       void generateBounds(Shape * shape);
@@ -204,7 +208,9 @@ namespace DTS
       void generateSequences(Shape * shape);
       void generateMaterialList(Shape * shape);
       void generateSkins(Shape * shape);
-      void optimizeMeshes(Shape * shape);
+      void prepareMesh(Mesh *mesh, std::vector<U32> &smooth, std::vector<U32> &remap,
+                        std::vector<U32> *vertId, F32 multiResPercent, bool isSortedObject);
+      void prepareMeshesForExport(Shape * shape);
       void convertSortObjects(Shape * shape);
       void initShape(Shape*);
 
@@ -252,7 +258,8 @@ namespace DTS
       // utility methods
       void fillNodeTransformCache(std::vector<NodeMimic*> &, Sequence &, AppSequenceData &);
       ObjectMimic * addObject(AppNode *, AppMesh *, std::vector<S32> * validDetails);
-      ObjectMimic * getObject(AppNode *, AppMesh *, char * name, S32 size, S32 * detailNum, bool matchFullName = true, bool isBone=false, bool isSkin=false);
+		ObjectMimic * addObject(AppNode * node, AppMesh * mesh, std::vector<S32> * validDetails, bool multiRes, S32 multiResSize=-1, F32 multiResPercent=1.0f);
+      ObjectMimic * getObject(AppNode *, AppMesh *, char * name, S32 size, S32 * detailNum, F32 multiResPercent, bool matchFullName = true, bool isBone=false, bool isSkin=false);
       ObjectMimic * addBoneObject(AppNode * node, S32 subtreeNum);
       MeshMimic * addSkinObject(SkinMimic * skinMimic);
       S32  addName(const char *, Shape * shape);
@@ -261,6 +268,7 @@ namespace DTS
       void collapseVertices(Mesh *, std::vector<U32> & smooth, std::vector<U32> & remap, std::vector<U32> * vertId);
       bool vertexSame(Point3D & v1, Point3D & v2, Point2D & tv1, Point2D & tv2, U32 smooth1, U32 smooth2, Point3D & norm1, Point3D & norm2, U32 idx1, U32 idx2, std::vector<U32> * vertId);
       void stripify(std::vector<Primitive> &, std::vector<U16> & indices);
+      void decimate(Mesh * mesh, F32 percentage);
       void collapseTransforms();
       bool cut(NodeMimic * mimicNode);
       void snip(NodeMimic * nodeMimic);
@@ -270,6 +278,8 @@ namespace DTS
       void dumpShapeNode(Shape * shape, S32 level, S32 nodeIndex, std::vector<S32> & detailSizes);
       void dumpShape(Shape * shape);
 
+      void getMultiResData(AppNode * node, std::vector<S32> & multiResSize, std::vector<F32> & multiResPercent);
+      void getMultiResData(AppMesh * node, std::vector<S32> & multiResSize, std::vector<F32> & multiResPercent);
    public:
       ShapeMimic();
       ~ShapeMimic();
@@ -280,6 +290,7 @@ namespace DTS
       void addNode(NodeMimic *,AppNode *, std::vector<S32> &,bool);
       void addMesh(AppNode * node, AppMesh * mesh) { addObject(node,mesh,NULL); }
       void addSkin(AppMesh * mesh);
+      void addSkin(AppMesh * mesh, bool multiRes, S32 multiResSize=-1, F32 multiResPercent=1.0f);
       void addSequence(AppSequence * sequence) { sequences.push_back(sequence); }
 
       // the payoff...call after adding all of the above

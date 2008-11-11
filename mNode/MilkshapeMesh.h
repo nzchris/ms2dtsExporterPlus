@@ -19,6 +19,13 @@ namespace MsDefaults
    const bool zDown              = false;
    const S32 numBigFaces         = 4;
    const S32 maxDepth            = 2;
+   const S32 autoBillboardSize   = 2;
+   const S32 numEquatorSteps     = 4;
+   const S32 numPolarSteps       = 0;
+   const S32 dl                  = 0;
+   const S32 dim                 = 64;
+   const bool includePoles       = true;
+   const F32 polarAngle          = 0;
 };
 
 class MilkshapeMaterial;
@@ -69,6 +76,9 @@ public:
    ///
    /// @return The mesh transform at the given frame
    DTS::Matrix<4,4,F32> getMeshTransform(S32 frame) const;
+
+   /// Remove all auto-details
+   void clearAutoDetails();
 
    /// Remove all visibility keyframes
    void clearVisFrames();

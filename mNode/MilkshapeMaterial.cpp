@@ -30,6 +30,7 @@ MilkshapeMaterial::MilkshapeMaterial(U32 matIndex) : MilkshapeNode("material")
    setUserPropBool("NoMipMap", MsDefaults::noMipMap);
    setUserPropBool("MipMapZeroBorder", MsDefaults::mipMapZeroBorder);
    setUserPropFloat("detailScale", MsDefaults::detailScale);
+   setUserPropBool("doubleSided", MsDefaults::doubleSided);
 
    setUserPropInt("detail", -1);
    setUserPropInt("bump", -1);

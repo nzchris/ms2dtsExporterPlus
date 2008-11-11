@@ -52,7 +52,7 @@ namespace DTS
             Matrix <rows,cols,type> result ;
             for (int r = 0 ; r < rows ; r++)
                for (int c = 0 ; c < cols ; c++)
-                  result[r][c] = (r == c ? 1:0) ;
+                  result[r][c] = type(r == c ? 1 : 0) ;
             return result ;
          }
 
@@ -112,8 +112,6 @@ namespace DTS
          }
 
          template <int rows2, int cols2>
-         operator *= (const Matrix<rows2,cols2,type> &a) { (*this) = (*this) * a ; }
-
          Matrix<rows,cols,type> operator + (const Matrix<rows,cols,type> &b)
          {
             Matrix<rows,cols2,type> result ;
@@ -123,6 +121,7 @@ namespace DTS
             return result ;
          }
 
+         template <int rows2, int cols2>
          Matrix<rows,cols,type> operator += (const Matrix<rows,cols,type> &b)
          {
             Matrix<rows,cols2,type> result ;
@@ -132,6 +131,7 @@ namespace DTS
             return result ;
          }
 
+         template <int rows2, int cols2>
          Matrix<rows,cols,type> operator - (const Matrix<rows,cols,type> &b)
          {
             Matrix<rows,cols2,type> result ;
@@ -141,6 +141,7 @@ namespace DTS
             return result ;
          }
 
+         template <int rows2, int cols2>
          Matrix<rows,cols,type> operator -= (const Matrix<rows,cols,type> &b)
          {
             Matrix<rows,cols2,type> result ;
@@ -287,7 +288,7 @@ namespace DTS
                         *ptr++ = m[r2][c2] ;             \
                      }                                   \
                   }                                      \
-                  type sign = 1-((r+c)%2)*2 ;            \
+                  type sign = float(1-((r+c)%2)*2) ;     \
                   p[c][r] = Matrix<o-1,o-1,type>(data)   \
                      .determinant() * sign / det ;       \
                }                                         \
@@ -340,3 +341,4 @@ namespace DTS
 }
 
 #endif
+

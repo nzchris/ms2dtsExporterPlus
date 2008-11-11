@@ -7,6 +7,8 @@
 
 #include "DTSShape.h"
 
+using namespace std;
+
 namespace DTS
 {
    // -------------------------------------------------------------------------
@@ -305,7 +307,7 @@ namespace DTS
    template <class type>
    inline InputStream & operator >> (InputStream & in, std::vector<type> &v)
    {
-      std::vector<type>::iterator pos = v.begin() ;
+      typename std::vector<type>::iterator pos = v.begin() ;
       while (pos != v.end())
       {
          in >> *pos++ ;

@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appNode.h"
@@ -65,6 +65,16 @@ namespace DTS
       return NULL;
    }
 
+	bool AppNode::isBillboard()
+	{
+		return !strnicmp(getName(),"BB::",4) || !strnicmp(getName(),"BB_",3) || !strnicmp(getName(),"BBZ::",5) || !strnicmp(getName(),"BBZ_",4);
+	}
+
+	bool AppNode::isBillboardZAxis()
+	{
+		return !strnicmp(getName(),"BBZ::",5) || !strnicmp(getName(),"BBZ_",4);
+	}
+
    bool AppNode::isDummy()
    {
       // naming convention should work well enough...
@@ -88,5 +98,4 @@ namespace DTS
    }
 
 }; // namespace DTS
-
 

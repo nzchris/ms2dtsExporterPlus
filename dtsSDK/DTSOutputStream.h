@@ -10,6 +10,8 @@
 #include "DTSMatrix.h"
 #include "DTSEndian.h"
 
+using namespace std;
+
 namespace DTS
 {
    // -------------------------------------------------------------------------
@@ -341,7 +343,7 @@ namespace DTS
    template <class type>
    inline OutputStream & operator << (OutputStream & out, const std::vector<type> &v) 
    {
-      std::vector<type>::const_iterator pos = v.begin() ;
+      typename vector<type>::const_iterator pos = v.begin() ;
       while (pos != v.end())
       {
          out << *pos++ ;
@@ -418,19 +420,20 @@ namespace DTS
       // Write the resulting data to the file
 
       std::streampos pos = out.tellp() ;
-      out.write ((char *) &DTSVersion, 4) ;
-      out.write ((char *) &totalSize, 4) ;
-      out.write ((char *) &offset16, 4) ;
-      out.write ((char *) &offset8, 4) ;
+      out.write ((char *) &FIX_ENDIAN(DTSVersion), 4) ;
+      out.write ((char *) &FIX_ENDIAN(totalSize), 4) ;
+      out.write ((char *) &FIX_ENDIAN(offset16), 4) ;
+      out.write ((char *) &FIX_ENDIAN(offset8), 4) ;
       out.write ((char *) Buffer32, 4 * Used32) ;
       out.write ((char *) Buffer16, 2 * Used16) ;
       out.write (Buffer8, Used8) ;
       std::streampos endpos = out.tellp() ;
 
-      assert ((endpos - pos) == 4*Used32 + 2*Used16 + 1*Used8 + 16) ;
+      assert ((endpos - pos) == (std::streampos)(4*Used32 + 2*Used16 + 1*Used8 + 16)) ;
 
    }
    
 }
 
 #endif
+

@@ -34,8 +34,10 @@ public:
 
 
 typedef cMsPlugIn* (*FN_CREATE_PLUGIN)();
+typedef void (*FN_DESTROY_PLUGIN)(cMsPlugIn*);
 
 cMsPlugIn *CreatePlugIn ();
+void DestroyPlugIn (cMsPlugIn *plugin);
 
 
 

@@ -56,7 +56,7 @@ namespace DTS
       public:
 
       AppMesh();
-      ~AppMesh();
+      virtual ~AppMesh();
 
       // Not necessary to use these (don't need to keep verts unique) but can be used for
       // keeping vert list smaller.  Add each vert using one or  the other method.
@@ -142,7 +142,7 @@ namespace DTS
    inline S32 AppMesh::getFaceMaterial(S32 faceIdx)
    {
       assert(mLocked && "Mesh isn't locked");
-      assert(faceIdx>=0 && faceIdx<mFaces.size() && "Face index out of range");
+      assert(faceIdx>=0 && U32(faceIdx) < mFaces.size() && "Face index out of range");
       if (mFaces[faceIdx].type & Primitive::NoMaterial)
          return -1;
       return mFaces[faceIdx].type & Primitive::MaterialMask;
@@ -205,7 +205,7 @@ namespace DTS
    inline AppNode * AppMesh::getBone(S32 idx)
    {
       lookupSkinData();
-      assert(idx>=0 && idx<mBones.size() && "Bone index out of range");
+      assert(idx>=0 && U32(idx) < mBones.size() && "Bone index out of range");
       return mBones[idx];
    }
 
@@ -213,15 +213,15 @@ namespace DTS
    {
       assert(mLocked && "Mesh isn't locked");
       lookupSkinData();
-      assert(boneIdx>=0 && boneIdx<mBones.size() && "Bone index out of range");
-      assert(vertIdx>=0 && vertIdx<mVertId.size() && "Vertex index out of range");
+      assert(boneIdx>=0 && U32(boneIdx) < mBones.size() && "Bone index out of range");
+      assert(vertIdx>=0 && U32(vertIdx) < mVertId.size() && "Vertex index out of range");
       assert(mVertId[vertIdx]<mWeights[boneIdx]->size() && "Vertex id out of range");
       return (*mWeights[boneIdx])[mVertId[vertIdx]];
    }
 
    inline AppIfl * AppMesh::getIfl(S32 matIdx)
    {
-      assert(matIdx>=0 && matIdx<mIfls.size() && "Mat index out of ifl range");
+      assert(matIdx>=0 && U32(matIdx) < mIfls.size() && "Mat index out of ifl range");
       return mIfls[matIdx];
    }
 
@@ -235,5 +235,5 @@ namespace DTS
 
 };
 
-
 #endif // DTSAPPMESH_H_
+

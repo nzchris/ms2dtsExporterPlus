@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "DTSUtil.h"
@@ -33,10 +33,10 @@ namespace DTS
 
       // convert components to 16 bit, then test for equality
       S16 x, y, z, w;
-      x = ((S16)(a.x() * float(MAX_VAL))) - ((S16)(b.x() * float(MAX_VAL)));
-      y = ((S16)(a.y() * float(MAX_VAL))) - ((S16)(b.y() * float(MAX_VAL)));
-      z = ((S16)(a.z() * float(MAX_VAL))) - ((S16)(b.z() * float(MAX_VAL)));
-      w = ((S16)(a.w() * float(MAX_VAL))) - ((S16)(b.w() * float(MAX_VAL)));
+      x = ((S16)(a.x() * F32(MAX_VAL))) - ((S16)(b.x() * F32(MAX_VAL)));
+      y = ((S16)(a.y() * F32(MAX_VAL))) - ((S16)(b.y() * F32(MAX_VAL)));
+      z = ((S16)(a.z() * F32(MAX_VAL))) - ((S16)(b.z() * F32(MAX_VAL)));
+      w = ((S16)(a.w() * F32(MAX_VAL))) - ((S16)(b.w() * F32(MAX_VAL)));
       return (x==0) && (y==0) && (z==0) && (w==0);
    }
 
@@ -67,11 +67,11 @@ namespace DTS
             ggMat[i][j] = mat[i][j];
       }
       GraphicGems::decomp_affine(ggMat,&ggParts);
-      parts->rot = Quaternion(ggParts.q.x,ggParts.q.y,ggParts.q.z,ggParts.q.w);
-      parts->scale = Point3D(ggParts.k.x,ggParts.k.y,ggParts.k.z);
-      parts->scaleRot = Quaternion(ggParts.u.x,ggParts.u.y,ggParts.u.z,ggParts.u.w);
-      parts->trans = Point3D(ggParts.t.x,ggParts.t.y,ggParts.t.z);
-      parts->sign = ggParts.f;
+      parts->rot = Quaternion(F32(ggParts.q.x),F32(ggParts.q.y),F32(ggParts.q.z),F32(ggParts.q.w));
+      parts->scale = Point3D(F32(ggParts.k.x),F32(ggParts.k.y),F32(ggParts.k.z));
+      parts->scaleRot = Quaternion(F32(ggParts.u.x),F32(ggParts.u.y),F32(ggParts.u.z),F32(ggParts.u.w));
+      parts->trans = Point3D(F32(ggParts.t.x),F32(ggParts.t.y),F32(ggParts.t.z));
+      parts->sign = F32(ggParts.f);
 
 #ifdef TEST_DTS_MATH
       // Test math (but only in the unscaled case
@@ -238,7 +238,8 @@ namespace DTS
       zapScale(m1);
       zapScale(m2);
 
-      convertToTransform(m1.inverse() * m2,rot,trans,srot,scale);
+      Matrix<4,4,F32> mat = m1.inverse() * m2;
+      convertToTransform(mat,rot,trans,srot,scale);
    }
 
    bool neverAnimateNode(AppNode*)
@@ -382,5 +383,13 @@ namespace DTS
        return false;
    }
 
+	char * removeExt(char * str)
+	{
+		char * tmp = strdup(str);
+		char * ext = strrchr(tmp,'.');
+		if (ext)
+			*ext = 0;
+		return tmp;
+	}
 };
 

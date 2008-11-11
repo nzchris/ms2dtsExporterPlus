@@ -11,6 +11,7 @@ namespace DTS
          
          //! Creates an standard mesh by default
          BrushMesh() : Mesh(T_Standard) {}
+         virtual ~BrushMesh() { }
 
          //! Creates (or recreates) the mesh
          virtual void construct() = 0 ;
@@ -49,3 +50,4 @@ namespace DTS
 }
 
 #endif
+

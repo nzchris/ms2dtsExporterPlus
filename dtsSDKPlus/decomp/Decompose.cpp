@@ -12,33 +12,33 @@ namespace GraphicGems
 #define mat_pad(A) (A[W][X]=A[X][W]=A[W][Y]=A[Y][W]=A[W][Z]=A[Z][W]=0,A[W][W]=1)
 
 /** Copy nxn matrix A to C using "gets" for assignment **/
-#define mat_copy(C,gets,A,n) {int i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
+#define mat_copy(C,gets,A,n) {S32 i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
    C[i][j] gets (A[i][j]);}
 
 /** Copy transpose of nxn matrix A to C using "gets" for assignment **/
-#define mat_tpose(AT,gets,A,n) {int i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
+#define mat_tpose(AT,gets,A,n) {S32 i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
    AT[i][j] gets (A[j][i]);}
 
 /** Assign nxn matrix C the element-wise combination of A and B using "op" **/
-#define mat_binop(C,gets,A,op,B,n) {int i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
+#define mat_binop(C,gets,A,op,B,n) {S32 i,j; for(i=0;i<n;i++) for(j=0;j<n;j++)\
    C[i][j] gets (A[i][j]) op (B[i][j]);}
 
 /** Multiply the upper left 3x3 parts of A and B to get AB **/
 void mat_mult(HMatrix A, HMatrix B, HMatrix AB)
 {
-   int i, j;
+   S32 i, j;
    for (i=0; i<3; i++) for (j=0; j<3; j++)
    AB[i][j] = A[i][0]*B[0][j] + A[i][1]*B[1][j] + A[i][2]*B[2][j];
 }
 
 /** Return dot product of length 3 vectors va and vb **/
-double vdot(double *va, double *vb)
+F64 vdot(F64 *va, F64 *vb)
 {
    return (va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2]);
 }
 
 /** Set v to cross product of length 3 vectors va and vb **/
-void vcross(double *va, double *vb, double *v)
+void vcross(F64 *va, F64 *vb, F64 *v)
 {
    v[0] = va[1]*vb[2] - va[2]*vb[1];
    v[1] = va[2]*vb[0] - va[0]*vb[2];
@@ -56,7 +56,7 @@ void adjoint_transpose(HMatrix M, HMatrix MadjT)
 /******* Quaternion Preliminaries *******/
 
 /* Construct a (possibly non-unit) quaternion from real components. */
-Quat Qt_(double x, double y, double z, double w)
+Quat Qt_(F64 x, F64 y, F64 z, F64 w)
 {
    Quat qq;
    qq.x = x;
@@ -91,7 +91,7 @@ Quat Qt_Mul(Quat qL, Quat qR)
 }
 
 /* Return product of quaternion q by scalar w. */
-Quat Qt_Scale(Quat q, double w)
+Quat Qt_Scale(Quat q, F64 w)
 {
    Quat qq;
    qq.w = q.w*w;
@@ -113,7 +113,7 @@ Quat Qt_FromMatrix(HMatrix mat)
     * Otherwise, the largest diagonal entry corresponds to the largest of |x|,
     * |y|, or |z|, one of which must be larger than |w|, and at least 1/2. */
    Quat qu;
-   register double tr, s;
+   register F64 tr, s;
 
    tr = mat[X][X] + mat[Y][Y]+ mat[Z][Z];
    if (tr >= 0.0) {
@@ -124,7 +124,7 @@ Quat Qt_FromMatrix(HMatrix mat)
       qu.y = (mat[X][Z] - mat[Z][X]) * s;
       qu.z = (mat[Y][X] - mat[X][Y]) * s;
    } else {
-      int h = X;
+      S32 h = X;
       if (mat[Y][Y] > mat[X][X]) h = Y;
       if (mat[Z][Z] > mat[h][h]) h = Z;
       switch (h) {
@@ -155,10 +155,10 @@ static HMatrix mat_id = {
 };
 
 /** Compute either the 1 or infinity norm of M, depending on tpose **/
-double mat_norm(HMatrix M, int tpose)
+F64 mat_norm(HMatrix M, S32 tpose)
 {
-   int i;
-   double sum, max;
+   S32 i;
+   F64 sum, max;
    max = 0.0;
    for (i=0; i<3; i++)
    {
@@ -172,18 +172,18 @@ double mat_norm(HMatrix M, int tpose)
    return max;
 }
 
-double norm_inf(HMatrix M) {
+F64 norm_inf(HMatrix M) {
    return mat_norm(M, 0);
 }
-double norm_one(HMatrix M) {
+F64 norm_one(HMatrix M) {
    return mat_norm(M, 1);
 }
 
 /** Return index of column of M containing maximum abs entry, or -1 if M=0 **/
-int find_max_col(HMatrix M)
+S32 find_max_col(HMatrix M)
 {
-   double abs, max;
-   int i, j, col;
+   F64 abs, max;
+   S32 i, j, col;
    max = 0.0; col = -1;
    for (i=0; i<3; i++) for (j=0; j<3; j++) {
    abs = M[i][j]; if (abs<0.0) abs = -abs;
@@ -193,9 +193,9 @@ int find_max_col(HMatrix M)
 }
 
 /** Setup u for Household reflection to zero all v components but first **/
-void make_reflector(double *v, double *u)
+void make_reflector(F64 *v, F64 *u)
 {
-   double s = sqrt(vdot(v, v));
+   F64 s = sqrt(vdot(v, v));
    u[0] = v[0]; u[1] = v[1];
    u[2] = v[2] + ((v[2]<0.0) ? -s : s);
    s = sqrt(2.0/vdot(u, u));
@@ -203,20 +203,20 @@ void make_reflector(double *v, double *u)
 }
 
 /** Apply Householder reflection represented by u to column vectors of M **/
-void reflect_cols(HMatrix M, double *u)
+void reflect_cols(HMatrix M, F64 *u)
 {
-   int i, j;
+   S32 i, j;
    for (i=0; i<3; i++) {
-   double s = u[0]*M[0][i] + u[1]*M[1][i] + u[2]*M[2][i];
+   F64 s = u[0]*M[0][i] + u[1]*M[1][i] + u[2]*M[2][i];
    for (j=0; j<3; j++) M[j][i] -= u[j]*s;
    }
 }
 /** Apply Householder reflection represented by u to row vectors of M **/
-void reflect_rows(HMatrix M, double *u)
+void reflect_rows(HMatrix M, F64 *u)
 {
-   int i, j;
+   S32 i, j;
    for (i=0; i<3; i++) {
-   double s = vdot(u, M[i]);
+   F64 s = vdot(u, M[i]);
    for (j=0; j<3; j++) M[i][j] -= u[j]*s;
    }
 }
@@ -224,8 +224,8 @@ void reflect_rows(HMatrix M, double *u)
 /** Find orthogonal factor Q of rank 1 (or less) M **/
 void do_rank1(HMatrix M, HMatrix Q)
 {
-   double v1[3], v2[3], s;
-   int col;
+   F64 v1[3], v2[3], s;
+   S32 col;
    mat_copy(Q,=,mat_id,4);
    /* If rank(M) is 1, we should find a non-zero column in M */
    col = find_max_col(M);
@@ -242,9 +242,9 @@ void do_rank1(HMatrix M, HMatrix Q)
 /** Find orthogonal factor Q of rank 2 (or less) M using adjoint transpose **/
 void do_rank2(HMatrix M, HMatrix MadjT, HMatrix Q)
 {
-   double v1[3], v2[3];
-   double w, x, y, z, c, s, d;
-   int col;
+   F64 v1[3], v2[3];
+   F64 w, x, y, z, c, s, d;
+   S32 col;
    /* If rank(M) is 2, we should find a non-zero column in MadjT */
    col = find_max_col(MadjT);
    if (col<0) {do_rank1(M, Q); return;} /* Rank<2 */
@@ -273,12 +273,12 @@ void do_rank2(HMatrix M, HMatrix MadjT, HMatrix Q)
  * Technical Report 88-942, October 1988,
  * Department of Computer Science, Cornell University.
  */
-double polar_decomp(HMatrix M, HMatrix Q, HMatrix S)
+F64 polar_decomp(HMatrix M, HMatrix Q, HMatrix S)
 {
 #define TOL 1.0e-6
    HMatrix Mk, MadjTk, Ek;
-   double det, M_one, M_inf, MadjT_one, MadjT_inf, E_one, gamma, g1, g2;
-   int i, j;
+   F64 det, M_one, M_inf, MadjT_one, MadjT_inf, E_one, gamma, g1, g2;
+   S32 i, j;
    mat_tpose(Mk,=,M,3);
    M_one = norm_one(Mk);  M_inf = norm_inf(Mk);
    do {
@@ -328,18 +328,18 @@ double polar_decomp(HMatrix M, HMatrix Q, HMatrix S)
 HVect spect_decomp(HMatrix S, HMatrix U)
 {
    HVect kv;
-   double Diag[3],OffD[3]; /* OffD is off-diag (by omitted index) */
-   double g,h,fabsh,fabsOffDi,t,theta,c,s,tau,ta,OffDq,a,b;
-   static char nxt[] = {Y,Z,X};
-   int sweep, i, j;
+   F64 Diag[3],OffD[3]; /* OffD is off-diag (by omitted index) */
+   F64 g,h,fabsh,fabsOffDi,t,theta,c,s,tau,ta,OffDq,a,b;
+   static S8 nxt[] = {Y,Z,X};
+   S32 sweep, i, j;
    mat_copy(U,=,mat_id,4);
    Diag[X] = S[X][X]; Diag[Y] = S[Y][Y]; Diag[Z] = S[Z][Z];
    OffD[X] = S[Y][Z]; OffD[Y] = S[Z][X]; OffD[Z] = S[X][Y];
    for (sweep=20; sweep>0; sweep--) {
-   double sm = fabs(OffD[X])+fabs(OffD[Y])+fabs(OffD[Z]);
+   F64 sm = fabs(OffD[X])+fabs(OffD[Y])+fabs(OffD[Z]);
    if (sm==0.0) break;
    for (i=Z; i>=X; i--) {
-      int p = nxt[i]; int q = nxt[p];
+      S32 p = nxt[i]; S32 q = nxt[p];
       fabsOffDi = fabs(OffD[i]);
       g = 100.0*fabsOffDi;
       if (fabsOffDi>0.0) {
@@ -388,15 +388,15 @@ Quat snuggle(Quat q, HVect *k)
 #define cycle(a,p)  if (p) {a[3]=a[0]; a[0]=a[1]; a[1]=a[2]; a[2]=a[3];}\
         else   {a[3]=a[2]; a[2]=a[1]; a[1]=a[0]; a[0]=a[3];}
    Quat p;
-   double ka[4];
-   int i, turn = -1;
+   F64 ka[4];
+   S32 i, turn = -1;
    ka[X] = k->x; ka[Y] = k->y; ka[Z] = k->z;
    if (ka[X]==ka[Y]) {if (ka[X]==ka[Z]) turn = W; else turn = Z;}
    else {if (ka[X]==ka[Z]) turn = Y; else if (ka[Y]==ka[Z]) turn = X;}
    if (turn>=0) {
    Quat qtoz, qp;
    unsigned neg[3], win;
-   double mag[3], t;
+   F64 mag[3], t;
    static Quat qxtoz = {0,SQRTHALF,0,SQRTHALF};
    static Quat qytoz = {SQRTHALF,0,0,SQRTHALF};
    static Quat qppmm = { 0.5, 0.5,-0.5,-0.5};
@@ -412,9 +412,9 @@ Quat snuggle(Quat q, HVect *k)
    case Z: qtoz = q0001; break;
    }
    q = Qt_Conj(q);
-   mag[0] = (double)q.z*q.z+(double)q.w*q.w-0.5;
-   mag[1] = (double)q.x*q.z-(double)q.y*q.w;
-   mag[2] = (double)q.y*q.z+(double)q.x*q.w;
+   mag[0] = (F64)q.z*q.z+(F64)q.w*q.w-0.5;
+   mag[1] = (F64)q.x*q.z-(F64)q.y*q.w;
+   mag[2] = (F64)q.y*q.z+(F64)q.x*q.w;
    for (i=0; i<3; i++) if (neg[i] = (mag[i]<0.0)) mag[i] = -mag[i];
    if (mag[0]>mag[1]) {if (mag[0]>mag[2]) win = 0; else win = 2;}
    else       {if (mag[1]>mag[2]) win = 1; else win = 2;}
@@ -428,9 +428,9 @@ Quat snuggle(Quat q, HVect *k)
    p = Qt_Mul(p, Qt_(0.0,0.0,-qp.z/t,qp.w/t));
    p = Qt_Mul(qtoz, Qt_Conj(p));
    } else {
-   double qa[4], pa[4];
+   F64 qa[4], pa[4];
    unsigned lo, hi, neg[4], par = 0;
-   double all, big, two;
+   F64 all, big, two;
    qa[0] = q.x; qa[1] = q.y; qa[2] = q.z; qa[3] = q.w;
    for (i=0; i<4; i++) {
       pa[i] = 0.0;
@@ -449,7 +449,7 @@ Quat snuggle(Quat q, HVect *k)
    big = qa[hi];
    if (all>two) {
       if (all>big) {/*all*/
-     {int i; for (i=0; i<4; i++) pa[i] = sgn(neg[i], 0.5);}
+     {S32 i; for (i=0; i<4; i++) pa[i] = sgn(neg[i], 0.5);}
      cycle(ka,par)
       } else {/*big*/ pa[hi] = sgn(neg[hi],1.0);}
    } else {
@@ -493,7 +493,7 @@ void decomp_affine(HMatrix A, AffineParts *parts)
 {
    HMatrix Q, S, U;
    Quat p;
-   double det;
+   F64 det;
    parts->t = Qt_(A[X][W], A[Y][W], A[Z][W], 0);
    det = polar_decomp(A, Q, S);
    if (det<0.0) {

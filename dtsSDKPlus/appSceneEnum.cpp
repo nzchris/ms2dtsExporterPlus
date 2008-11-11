@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appSceneEnum.h"
@@ -46,9 +46,19 @@ namespace DTS
 
       AppSequence * seq = getSequence(node);
       if (seq)
-      {         
-         sequences.push_back(seq);
-         return true;
+      {
+         AppSequenceData data;
+         seq->getSequenceData(&data);
+         if (data.endTime >= data.startTime)
+         {
+            sequences.push_back(seq);
+            return true;
+         }
+         else
+         {
+            AppConfig::PrintWarning(PDPass1, "1", avar("Sequence: '%s' has start "
+               "frame later than end frame. Ignoring.\n", seq->getName()));
+         }
       }
 
       if (node->isDummy())
@@ -68,7 +78,7 @@ namespace DTS
       {
          if (boundsNode)
          {
-            setExportError("More than one bounds node found.");
+            AppConfig::SetExportError("4", "More than one bounds node found.");
             AppConfig::PrintDump(PDPass1,"More than one bounds node found.\r\n");
          }
          else
@@ -130,16 +140,20 @@ namespace DTS
       delete boundsNode;
    }
 
+   void AppSceneEnum::updateStatus( const char *stageName, S32 stageNumber, S32 stageProgress, S32 stageProgressMax )
+   {
+   }
+
    Shape * AppSceneEnum::processScene()
    {
-      setExportError(NULL);
+      //setExportError(NULL);
 
       AppConfig::PrintDump(PDPass1,"First pass:  enumerate scene...\r\n\r\n");
 
       enumScene();
 
       if (!boundsNode)
-         AppConfig::SetExportError("No bounds found");
+         AppConfig::SetExportError("0","No bounds found");
 
       if (AppConfig::IsExportError())
          return NULL;
@@ -171,3 +185,4 @@ namespace DTS
    }
 
 }; // namespace DTS
+

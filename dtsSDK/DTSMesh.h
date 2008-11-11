@@ -14,8 +14,8 @@ namespace DTS
 
    struct Primitive
    {
-      short firstElement ;       //!< Number of consecutive indices used
-      short numElements ;        //!< Number of the first index
+      short firstElement ;       //!< Number of the first index
+      short numElements ;        //!< Number of consecutive indices used
       int   type ;               //!< Type of primitive and number of material used
 
       enum /* type */
@@ -136,7 +136,7 @@ namespace DTS
       //! Return the node for a given vertex bone
       int getNodeIndexCount() { return nodeIndex.size(); }
       int getNodeIndex(int node) {
-         return (node >= 0 && node < nodeIndex.size())? nodeIndex[node]: -1;
+         return (node >= 0 && node < int(nodeIndex.size())) ? nodeIndex[node] : -1;
       }
       void setNodeTransform(int node,Point t, Quaternion q);
 
@@ -179,7 +179,8 @@ namespace DTS
       std::vector <int> firstVerts;   ///< indexed by frame number
       std::vector <int> numVerts;     ///< indexed by frame number
       std::vector <int> firstTVerts;  ///< indexed by frame number or matFrame number, depending on which one animates (never both)
-     
+      bool alwaysWriteDepth;
+
    private:
 
       int   type ;
@@ -198,3 +199,4 @@ namespace DTS
 }
 
 #endif
+

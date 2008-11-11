@@ -4,13 +4,39 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "appConfig.h"
 #include "appNode.h"
 
 namespace DTS {
+
+	class AppMessage
+	{
+		char* mMessageId;
+		char* mMessage;
+	public:
+		AppMessage( const char * messageId, const char * message );
+		~AppMessage();
+
+		char* MessageId() { return mMessageId; };
+		char* Message() { return mMessage; };
+	};
+
+	AppMessage::AppMessage( const char * messageId, const char* message )
+	{
+		mMessageId = strdup( messageId );
+		mMessage = strdup( message );
+	}
+
+	AppMessage::~AppMessage()
+	{
+		if( mMessageId )
+			free( mMessageId );
+		if( mMessage )
+			free( mMessage );
+	}
 
    static AppConfig gAppConfig;
 
@@ -20,12 +46,18 @@ namespace DTS {
    {
       setInitialDefaults();
       setupConfigParams();
+      mDumpFile = NULL;
    }
 
    AppConfig::~AppConfig()
    {      
       clearConfigLists();
       clearConfigParams();
+      if( mDumpFile )
+      {
+         mDumpFile->close();
+         delete mDumpFile;
+      }
       if (smConfig==this)
          smConfig=&gAppConfig;
    }
@@ -49,6 +81,9 @@ namespace DTS {
       mAppFramesPerSec = 30.0f;
       mDumpConfig = 0xFFFFFFFF;
       mErrorString = NULL;
+      mProgressCallback = NULL;
+      mIgnoreSmoothingGroupOnSkinMesh = true;
+      mIgnoreSmoothingGroupDuringCollapse = false;
       clearConfigLists();
    }
 
@@ -67,9 +102,17 @@ namespace DTS {
       for (i=0; i<mNeverAnimate.size(); i++)
          delete [] mNeverAnimate[i];
       mNeverAnimate.clear();
+
+      for (i=0; i<mErrorMessages.size(); i++)
+         delete mErrorMessages[i];
+      mErrorMessages.clear();
+
+      for (i=0; i<mWarningMessages.size(); i++)
+         delete mWarningMessages[i];
+      mWarningMessages.clear();
    }
 
-   void AppConfig::setConfig(AppConfig * config)
+   void AppConfig::SetConfig(AppConfig * config)
    {
       assert(config != NULL);
 
@@ -84,26 +127,87 @@ namespace DTS {
       // path can include full file name...can also include \,/, or : as path delimitors
       assert(path && "No path set on dump file");
       if (name==NULL)
-         name = "dump.dmp";
+         name = "dump.html";
 
       char * fullpath = getFilePath(path,strlen(name)+1);
       strcat(fullpath,name);
 
-      mDumpFile.open(fullpath,std::ofstream::binary);
-      delete [] fullpath;
-      return mDumpFile.good();
+      mDumpFile = new std::ofstream();
+      mDumpFile->open(fullpath,std::ofstream::binary);
+		if( !mDumpFile->fail() )
+		{
+			*mDumpFile << "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\r\n";
+			*mDumpFile << "<html>\r\n<head>\r\n<title>DTS Exporter Report</title>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\r\n";
+			*mDumpFile << "<style type=\"text/css\">\r\n<!--\r\n";
+			*mDumpFile << "body {\r\nfont-family: Verdana, Arial, Helvetica, sans-serif;\r\nfont-size: 14px;\r\nfont-weight: normal;\r\ncolor: #000000;\r\n}\r\n";
+			*mDumpFile << ".monoText {\r\nfont-size: 12px;\r\nline-height: normal;\r\nfont-family: \"Courier New\", Courier, mono;\r\n}\r\n";
+			*mDumpFile << ".errors {\r\nbackground-color: #FF9999;\r\nborder-width: 5;\r\nborder-style: solid;\r\nborder-color: #FF0000;\r\npadding: 4;\r\n}\r\n";
+			*mDumpFile << ".warnings {\r\nbackground-color: #FFF8AA;\r\nborder-width: 5;\r\nborder-style: solid;\r\nborder-color: #FFCC00;\r\npadding: 4;\r\n}\r\n";
+			*mDumpFile << ".header {\r\nfont-size: 16px;\r\nline-height: 24px;\r\nfont-family:Verdana, Arial, Helvetica, sans-serif;\r\nfont-weight: bold;\r\npadding-left: 0px;\r\n}\r\n";
+			*mDumpFile << "-->\r\n</style>\r\n</head>\r\n<body>\r\n<div class=\"header\">Exporter Report</div>\r\n<pre class=\"monoText\">\r\n";
+			mDumpFile->flush();
+		}
+      return !mDumpFile->fail();
    }
 
-   bool AppConfig::closeDumpFile()
-   {
-      mDumpFile.close();
-      return true;
-   }
+	bool AppConfig::closeDumpFile()
+	{
+		if (!mDumpFile || !mDumpFile->is_open())
+			return false;
+
+		S32 i;
+
+		*mDumpFile << "</pre>";
+		*mDumpFile << "<div class=\"warnings\">\r\n<div class=\"header\">Warnings:</div>\r\n";
+		if( mWarningMessages.size() == 0 )
+			*mDumpFile << "<div>No warnings.</div>";
+		else
+			for (i=0; i<mWarningMessages.size(); i++)
+				*mDumpFile << "<div><a href=\"http://artist.garagegames.com/dts/warnings/" << mWarningMessages[i]->MessageId() << "\">Warning #" << mWarningMessages[i]->MessageId() << "</a>:" << mWarningMessages[i]->Message() << "</div>";
+		*mDumpFile << "</div>\r\n<br>\r\n";
+		*mDumpFile << "<div class=\"errors\">\r\n<div class=\"header\">Errors:</div>\r\n";
+		if( mErrorMessages.size() == 0 )
+			*mDumpFile << "<div>No errors.</div>";
+		else
+			for (i=0; i<mErrorMessages.size(); i++)
+				*mDumpFile << "<div><a href=\"http://artist.garagegames.com/dts/errors/" << mErrorMessages[i]->MessageId() << "\">Error #" << mErrorMessages[i]->MessageId() << "</a>:" << mErrorMessages[i]->Message() << "</div>";
+		*mDumpFile << "</div>\r\n";
+		*mDumpFile << "</body>\r\n</html>\r\n";
+		mDumpFile->flush();
+		mDumpFile->close();
+		delete mDumpFile;
+		mDumpFile = NULL;
+		return true;
+	}
 
    void AppConfig::printDump(U32 mask, const char * str)
    {
+      if (!mDumpFile || !mDumpFile->is_open())
+         return;
+
       if (mask && AppConfig::GetDumpMask())
-         mDumpFile << str;
+      {
+         *mDumpFile << str;
+         mDumpFile->flush();
+      }
+   }
+
+	void AppConfig::printWarning( U32 mask, const char * warningId, const char* warningMessage )
+	{
+		if (mask && AppConfig::GetDumpMask())
+		{
+			mWarningMessages.push_back( new AppMessage( warningId, warningMessage ) );
+			printDump( mask, warningMessage );
+		}
+	}
+
+	void AppConfig::printError( U32 mask, const char * errorId, const char* errorMessage )
+	{
+		if (mask && AppConfig::GetDumpMask())
+		{
+			mErrorMessages.push_back( new AppMessage( errorId, errorMessage ) );
+			printDump( mask, errorMessage );
+		}
    }
 
    bool AppConfig::alwaysExport(AppNode * node)
@@ -200,7 +304,7 @@ namespace DTS {
       is.open(filename);
       if (!is.is_open())
       {
-         printDump(PDAlways,avar("\r\nConfig file \"%s\" not found.\r\n",filename));
+         printWarning(PDAlways,"101",avar("\r\nConfig file \"%s\" not found.\r\n",filename));
          return false;
       }
 
@@ -249,7 +353,7 @@ namespace DTS {
                if (idx1>=0)
                {
                   // Float
-                  *mFloatParams[idx1] = atof(endName+1);
+                  *mFloatParams[idx1] = F32(atof(endName+1));
                   printDump(PDAlways,avar("%s = %f\r\n",mFloatParamNames[idx1],*mFloatParams[idx1]));
                }
                if (idx2>=0)
@@ -407,7 +511,15 @@ namespace DTS {
       mBoolParams.push_back((U32*)&mZapBorder);
       mBoolParamBit.push_back(0);
 
-      // add float config parameters
+      mBoolParamNames.push_back(strnew("SmoothingGroup::IgnoreOnSkinMesh"));
+      mBoolParams.push_back((U32*)&mIgnoreSmoothingGroupOnSkinMesh);
+      mBoolParamBit.push_back(0);
+
+      mBoolParamNames.push_back(strnew("SmoothingGroup::IgnoreDuringCollapse"));
+      mBoolParams.push_back((U32*)&mIgnoreSmoothingGroupDuringCollapse);
+      mBoolParamBit.push_back(1);
+
+      // add F32 config parameters
       mFloatParamNames.push_back(strnew("Params::AnimationDelta"));
       mFloatParams.push_back(&mAnimationDelta);
 
@@ -420,7 +532,7 @@ namespace DTS {
       mFloatParamNames.push_back(strnew("Params::SameTVertTOL"));
       mFloatParams.push_back(&mSameTVertTOL);
 
-      // add int config parameters
+      // add S32 config parameters
       mIntParamNames.push_back(strnew("Params::weightsPerVertex"));
       mIntParams.push_back(&mWeightsPerVertex);
    }
@@ -448,6 +560,29 @@ namespace DTS {
       mStringParams.clear();
       mStringParamMaxLen.clear();
    }
+
+   // progress handling
+   void AppConfig::setProgressCallback(progressfnptr callback, void *arg)
+   {
+      mProgressCallback = callback;
+      mProgressArg = arg;
+   }
+
+   void AppConfig::setProgress(F32 minor, F32 major, const char* message)
+   {
+      if (mProgressCallback)
+      {
+         mProgressCallback(mProgressArg, minor, major, message);
+      }
+   }
+
+	// error handling
+	const char *AppConfig::getExportError()
+	{
+		if (isExportError())
+			return mErrorMessages[0]->Message();
+		return "No errors";
+	}
 
 }; // namespace DTS
 

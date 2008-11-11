@@ -11,22 +11,64 @@
 #include "DTSPlusTypes.h"
 #include "appNode.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)
+#endif
+
 namespace DTS
 {
 #ifndef M_PI
    const F64 M_PI = 3.14159265358979323846;
 #endif
-   const char PATH_DELIM_CHAR = '\\';
-   const char PATH_DELIM_STR[] = "\\";
+   const S8 PATH_DELIM_CHAR = '\\';
+   const S8 PATH_DELIM_STR[] = "\\";
 
    template <class T> inline const T & getmax(const T & t1, const T & t2) {  return t1>t2 ? t1 : t2; }
+	template <class T> inline const T & getmin(const T & t1, const T & t2) {  return t1<t2 ? t1 : t2; }
 
    // don't like std:vector insert/erase...
 
-   template <class T>
-   inline void delElement(std::vector<T> & vec, S32 idx) { vec.erase(&vec[idx]); }
-   template <class T>
-   inline void insElement(std::vector<T> & vec, S32 idx, const T & el) { vec.insert(&vec[idx],el); }
+   template <class T> inline void delElementAtIndex(std::vector<T> & vec, S32 idx) 
+	{ 
+		vec.erase(vec.begin() + idx); 
+	}
+
+   template <class T> inline void insElementAtIndex(std::vector<T> & vec, S32 idx, const T & el)
+   {
+      vec.insert(vec.begin() + idx,el);
+   }
+
+	template <class T> inline void delElement(std::vector<T> & vec, const T & el)
+	{
+		for(S32 i=0;i<vec.size();i++) {
+			if(vec[i] == el)
+			{
+				vec.erase(vec.begin() + i);
+				return;
+			}
+		}
+	}
+
+	template <class T> inline bool containsElement(std::vector<T> & vec, const T & el )
+	{
+		S32 count = 0;
+		for(S32 i=0;i<vec.size();i++)
+      {
+			if(vec[i] == el)
+            count++;
+      }
+
+      if (count > 0)
+		   return true;
+      else
+         return false;
+	}
+
+	template <class T> inline void addUniqueElement(std::vector<T> & vec, const T & el )
+   {
+		if( !containsElement(vec, el) )
+			vec.push_back(el);
+   }
 
    // add a method that Torque vectors has but std::vectors don't
    template <class T>
@@ -35,7 +77,7 @@ namespace DTS
    inline bool isZero(F32 f, F32 tol) { return fabs(f)<tol; }
    inline bool isZero(const Point2D & a, F32 tol) { return isZero(a.x(),tol) && isZero(a.y(),tol); }
    inline bool isZero(const Point3D & a, F32 tol) { return isZero(a.x(),tol) && isZero(a.y(),tol) && isZero(a.z(),tol); }
-   inline bool isZero(const Quaternion & a, F32 tol) { isZero(a.x(),tol) && isZero(a.y(),tol) && isZero(a.z(),tol) && isZero(a.w(),tol); }
+   inline bool isZero(const Quaternion & a, F32 tol) { return isZero(a.x(),tol) && isZero(a.y(),tol) && isZero(a.z(),tol) && isZero(a.w(),tol); }
    inline bool isEqual(F32 a, F32 b, F32 tol) { return isZero(a-b,tol); }
    inline bool isEqual(const Point2D & a, const Point2D & b, F32 tol) { return isZero(a-b,tol); }
    inline bool isEqual(const Point3D & a, const Point3D & b, F32 tol) { return isZero(a-b,tol); }
@@ -75,7 +117,7 @@ namespace DTS
 
    inline void setMembershipArray(std::vector<bool> & m, bool setTo, S32 a, S32 b)
    {
-      if (m.size()<b)
+      if (m.size() < U32(b))
          m.resize(b);
       for (S32 i=a; i<b; i++)
          m[i]=setTo;
@@ -88,7 +130,7 @@ namespace DTS
 
    inline bool allSet(std::vector<bool> & m)
    {
-      for (S32 i=0; i<m.size(); i++)
+      for (U32 i=0; i<m.size(); i++)
       {
          if (!m[i]) return false;
       }
@@ -98,7 +140,7 @@ namespace DTS
    inline void overlapSet(std::vector<bool> & m1, const std::vector<bool> & m2)
    {
       assert(m1.size()==m2.size());
-      for (S32 i=0; i<m2.size(); i++)
+      for (U32 i=0; i<m2.size(); i++)
       {
          if (m2[i])
             m1[i]=true;
@@ -108,7 +150,7 @@ namespace DTS
    inline void subtractSet(std::vector<bool> & m1, const std::vector<bool> & m2)
    {
       assert(m1.size()==m2.size());
-      for (S32 i=0; i<m2.size(); i++)
+      for (U32 i=0; i<m2.size(); i++)
       {
          if (m2[i])
             m1[i]=false;
@@ -126,6 +168,8 @@ namespace DTS
    extern char * getFilePath(const char * str, S32 pad=0);
 
    inline char * strnew(std::string str) { return strnew(str.c_str()); }
+
+	extern char * removeExt(char * str);
 };
 
 #endif // DTSUTIL_H_

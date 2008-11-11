@@ -28,6 +28,7 @@ namespace DTS
       bool cyclic;
       bool blend;
       bool ignoreGround;
+      bool autoGround;
 
       bool enableMorph;
       bool enableTVert;
@@ -61,11 +62,14 @@ namespace DTS
       F32 overrideDuration;
 
       F32  priority;
+
+      Point3D groundSpeed;
    };
 
    class AppSequence
    {
       public:
+         virtual ~AppSequence() { }
          virtual const char * getName() = 0;
 
          virtual void getSequenceData(AppSequenceData *) = 0;

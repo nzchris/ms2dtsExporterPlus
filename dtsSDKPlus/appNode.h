@@ -54,6 +54,8 @@ namespace DTS
       virtual bool   getInt(const char * propName, S32  & defaultVal) = 0;
       virtual bool  getBool(const char * propName, bool & defaultVal) = 0;
 
+      virtual bool isBillboard();
+      virtual bool isBillboardZAxis();
       virtual bool isParentRoot() = 0;
       virtual bool isDummy();
       virtual bool isBounds();

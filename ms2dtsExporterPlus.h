@@ -67,6 +67,8 @@ class Ms2dtsExporterPlus : public cMsPlugIn
    /// @param message           Messagebox text
    void alert(const char *title, const char *message) const;
 
+   static void updateProgress(void *arg, F32 minor, F32 major, const char* message);
+
 public:
 
    Ms2dtsExporterPlus();

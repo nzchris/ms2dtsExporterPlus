@@ -25,25 +25,26 @@ template <class Type> class OnDestroy
 protected:
    Type * mObj;
 
-   void transfer(OnDestroy<Type> * des)
+   void transfer(const OnDestroy<Type> * des)
    {
       doit();
       if (des)
       {
          mObj = des->mObj;
-         des->mObj=NULL;
+         const_cast<OnDestroy<Type>*>(des)->mObj=0;
       }
    }
 
-   virtual void doit() = NULL;
+   virtual void doit() = 0;
 
 public:
 
-   OnDestroy(Type * obj=NULL) { mObj=obj; }
-   OnDestroy(OnDestroy<Type> & des) { transfer(&des); }
+   OnDestroy(Type * obj=0) { mObj=obj; }
+   OnDestroy(const OnDestroy<Type> & des) { transfer(&des); }
    virtual ~OnDestroy() {}
-   void operator=(OnDestroy<Type> & des) { transfer(&des); }
+   void operator=(const OnDestroy<Type> & des) { transfer(&des); }
 };
 
 
 #endif // DTSPLUSTYPES_H_
+

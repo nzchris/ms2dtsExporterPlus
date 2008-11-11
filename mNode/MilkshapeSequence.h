@@ -11,12 +11,17 @@ namespace MsDefaults
    const F32 priority            = 5;
    const F32 overrideDuration    = -1;
    const S32 numTriggers         = 0;
-   const bool ignoreGround       = false;
    const bool enableMorph        = false;
    const bool enableTVert        = false;
    const bool enableVis          = false;
    const bool enableTransform    = true;
    const bool enableIFL          = false;
+   const bool ignoreGround       = false;
+   const bool autoGround         = false;
+   const F32 groundFrameRate     = 10;
+   const F32 groundXSpeed        = 0;
+   const F32 groundYSpeed        = 0;
+   const F32 groundZSpeed        = 0;
 }
 
 

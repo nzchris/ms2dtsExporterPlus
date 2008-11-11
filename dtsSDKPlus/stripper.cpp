@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
-#pragma warning(disable : 4786)
+#pragma warning(disable : 4786 4018)
 #endif
 
 #include "stripper.h"
@@ -62,7 +62,7 @@ namespace DTS
       U16 * indices = &stripIndices.back();
       if (*indices!=*cache || *(indices-1)!=*(cache-1) || *(indices-2)!=*(cache-2))
       {
-         AppConfig::SetExportError("Assertion failed when stripping (11)");
+         AppConfig::SetExportError("14", "Assertion failed when stripping (11)");
          return;
       }
    
@@ -75,17 +75,17 @@ namespace DTS
          U32 idx2 = faceIndices[face.firstElement+2];
          if ( idx0!=*(cache) && idx0!=*(cache-1) && idx0!=*(cache-2))
          {
-            AppConfig::SetExportError("Assertion failed when stripping (8)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (8)");
             return;
          }
          if ( idx1!=*(cache) && idx1!=*(cache-1) && idx1!=*(cache-2))
          {
-            AppConfig::SetExportError("Assertion failed when stripping (9)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (9)");
             return;
          }
          if ( idx2!=*(cache) && idx2!=*(cache-1) && idx2!=*(cache-2))
          {
-            AppConfig::SetExportError("Assertion failed when stripping (10)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (10)");
             return;
          }
       }
@@ -194,7 +194,7 @@ namespace DTS
       {
          if (!used[i])
          {
-            AppConfig::SetExportError("Assertion failed when stripping (1)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (1)");
             return;
          }
       }
@@ -202,7 +202,7 @@ namespace DTS
       {
          if (numAdjacent[i])
          {
-            AppConfig::SetExportError("Assertion failed when stripping (2)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (2)");
             return;
          }
       }
@@ -212,7 +212,7 @@ namespace DTS
       {
          if (!used[i])
          {
-            AppConfig::SetExportError("Assertion failed when stripping (3)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (3)");
             return;
          }
       }
@@ -304,14 +304,14 @@ namespace DTS
                // i,j are adjacent
                if (adjacent.isSet(i,j) || adjacent.isSet(j,i))
                {
-                  AppConfig::SetExportError("wtf (1)");
+                  AppConfig::SetExportError("15", "wtf (1)");
                   return;
                }
                adjacent.setBit(i,j);
                adjacent.setBit(j,i);
                if (!adjacent.isSet(i,j) || !adjacent.isSet(j,i))
                {
-                  AppConfig::SetExportError("wtf (2)");
+                  AppConfig::SetExportError("15", "wtf (2)");
                   return;
                }
                numAdjacent[i]++;
@@ -337,7 +337,7 @@ namespace DTS
       if (i==vertexCache.size())
          cacheMisses++;
 
-      delElement(vertexCache,0);
+      delElementAtIndex(vertexCache,0);
       vertexCache.push_back(vertexIndex);
    }
 
@@ -346,8 +346,8 @@ namespace DTS
       // theoretically this could result in a cache miss, but never used that way so
       // we won't check...
 
-      delElement(vertexCache,0);
-      insElement(vertexCache,vertexCache.size()-posFromBack,vertexIndex);
+      delElementAtIndex(vertexCache,0);
+      insElementAtIndex(vertexCache,vertexCache.size()-posFromBack,vertexIndex);
    }
 
    bool Stripper::startStrip(Primitive & strip, S32 startFace, S32 endFace)
@@ -439,7 +439,7 @@ namespace DTS
             numAdjacent[j]--;
             if (numAdjacent[j]<0)
             {
-               AppConfig::SetExportError("Assertion failed when stripping (4)");
+               AppConfig::SetExportError("14", "Assertion failed when stripping (4)");
                return false;
             }
          }
@@ -480,7 +480,7 @@ namespace DTS
          addVert = idx2;
       if (addVert<0 || prev.size()!=2)
       {
-         AppConfig::SetExportError("Assertion failed when stripping (5)");
+         AppConfig::SetExportError("14", "Assertion failed when stripping (5)");
          return;
       }
    
@@ -625,7 +625,7 @@ namespace DTS
          }
          else
          {
-            AppConfig::SetExportError("Assertion failed when stripping (6)");
+            AppConfig::SetExportError("14", "Assertion failed when stripping (6)");
             return;
          }
       }
@@ -768,7 +768,7 @@ namespace DTS
             rotateFace(strip.firstElement,stripIndices);
             if (++doh==3)
             {
-               AppConfig::SetExportError("Assertion error while stripping: infinite loop");
+               AppConfig::SetExportError("14", "Assertion error while stripping: infinite loop");
                return false;
             }
          }
@@ -786,7 +786,7 @@ namespace DTS
          {
             U32 sz = stripIndices.size();
             U32 dup = stripIndices[sz-3];
-            insElement(stripIndices,sz-1,U16(dup));
+            insElementAtIndex(stripIndices,sz-1,U16(dup));
             stripIndices[sz-1] = dup;
             addToCache(dup,1);
             strip.numElements++;
@@ -819,7 +819,7 @@ namespace DTS
             numAdjacent[j]--;
             if (numAdjacent[j]<0)
             {
-               AppConfig::SetExportError("Assertion failed when stripping (7)");
+               AppConfig::SetExportError("14", "Assertion failed when stripping (7)");
                return false;
             }
          }

@@ -90,8 +90,8 @@ LIB32=link.exe -lib
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "..\dtsSDK" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
 # SUBTRACT BASE CPP /Fr /YX
-# ADD CPP /nologo /MT /W3 /Gm /GR /GX /ZI /Od /I "..\dtsSDK" /D "WIN32" /D "_LIB" /FD /GZ /c
-# SUBTRACT CPP /Fr /YX
+# ADD CPP /nologo /MT /W3 /Gm /GR /GX /ZI /Od /I "..\dtsSDK" /D "WIN32" /D "_LIB" /Fr /FD /GZ /c
+# SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -142,6 +142,14 @@ SOURCE=..\dtsSDKPlus\appTime.cpp
 # Begin Source File
 
 SOURCE=..\dtsSDKPlus\decomp\Decompose.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\dtsSDKPlus\DTSDecimator.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\dtsSDKPlus\DTSDecimator.h
 # End Source File
 # Begin Source File
 

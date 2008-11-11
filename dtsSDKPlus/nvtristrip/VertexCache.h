@@ -8,28 +8,30 @@
 #ifndef VERTEX_CACHE_H
 #define VERTEX_CACHE_H
 
+#include "../DTSPlusTypes.h"
+
 class VertexCache
 {
 	
 public:
 	
-	VertexCache(int size)
+	VertexCache(S32 size)
 	{
 		numEntries = size;
 		
-		entries = new int[numEntries];
+		entries = new S32[numEntries];
 		
-		for(int i = 0; i < numEntries; i++)
+		for(S32 i = 0; i < numEntries; i++)
 			entries[i] = -1;
 	}
 		
 	VertexCache() { VertexCache(16); }
 	~VertexCache() { delete[] entries; entries = 0; }
 	
-	bool InCache(int entry)
+	bool InCache(S32 entry)
 	{
 		bool returnVal = false;
-		for(int i = 0; i < numEntries; i++)
+		for(S32 i = 0; i < numEntries; i++)
 		{
 			if(entries[i] == entry)
 			{
@@ -41,14 +43,14 @@ public:
 		return returnVal;
 	}
 	
-	int AddEntry(int entry)
+	S32 AddEntry(S32 entry)
 	{
-		int removed;
+		S32 removed;
 		
 		removed = entries[numEntries - 1];
 		
 		//push everything right one
-		for(int i = numEntries - 2; i >= 0; i--)
+		for(S32 i = numEntries - 2; i >= 0; i--)
 		{
 			entries[i + 1] = entries[i];
 		}
@@ -60,24 +62,24 @@ public:
 
 	void Clear()
 	{
-		memset(entries, -1, sizeof(int) * numEntries);
+		memset(entries, -1, sizeof(S32) * numEntries);
 	}
 	
 	void Copy(VertexCache* inVcache) 
 	{
-		for(int i = 0; i < numEntries; i++)
+		for(S32 i = 0; i < numEntries; i++)
 		{
 			inVcache->Set(i, entries[i]);
 		}
 	}
 
-	int At(int index) { return entries[index]; }
-	void Set(int index, int value) { entries[index] = value; }
+	S32 At(S32 index) { return entries[index]; }
+	void Set(S32 index, S32 value) { entries[index] = value; }
 
 private:
 
-  int *entries;
-  int numEntries;
+  S32 *entries;
+  S32 numEntries;
 
 };
 

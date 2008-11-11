@@ -1,8 +1,8 @@
 /**********************************************************************
  *
- * MilkShape 3D Model Import/Export API
+ * MilkShape 3D Model Import/Export API (for version 1.8.4 and up).
  *
- * May 10 2000, Mete Ciragan, chUmbaLum sOft
+ * Apr 11 2008, Mete Ciragan, chUmbaLum sOft
  *
  **********************************************************************/
 
@@ -40,6 +40,12 @@ extern "C" {
 #define MS_MAX_NAME             32
 #define MS_MAX_PATH             256
 
+#define MAX_VERTICES	65534
+#define MAX_TRIANGLES	65534
+#define MAX_GROUPS		255
+#define MAX_MATERIALS	128
+#define MAX_JOINTS		128
+
 
 
 /**********************************************************************
@@ -62,10 +68,21 @@ typedef float   msVec2[2];
 
 /* msFlag */
 typedef enum {
-    eSelected = 1, eSelected2 = 2, eHidden = 4, eDirty = 8, eAveraged = 16, eKeepVertex = 32, eSphereMap = 0x80, eHasAlpha = 0x40
+    eSelected = 1, eSelected2 = 2, eHidden = 4, eDirty = 8, eAveraged = 16, eKeepVertex = 32, eSphereMap = 0x80, eHasAlpha = 0x40, eCombineAlpha = 0x20, eIgnoreAlpha = 0x10
 } msFlag;
 
-/* msVertex */
+
+
+/*
+!!!
+!!! Do not use direct structs access like vertex->nFlags. Use msVertex_GetFlags(vertex) instead. This makes sure,
+!!! that your plugin stays compatible with future versions of MilkShape 3D.
+!!!
+*/
+
+
+
+/* msVertex: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msVertex
 {
     byte        nFlags;
@@ -74,14 +91,15 @@ typedef struct msVertex
     char        nBoneIndex;
 } msVertex;
 
-/* msVertexEx */
+/* msVertexEx: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msVertexEx
 {
 	char		nBoneIndices[3];
 	byte		nBoneWeights[3];
+	unsigned int nExtra;
 } msVertexEx;
 
-/* msTriangle */
+/* msTriangle: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msTriangle
 {
     word        nFlags;
@@ -91,14 +109,14 @@ typedef struct msTriangle
     byte        nSmoothingGroup;
 } msTriangle;
 
-/* msTriangleEx */
+/* msTriangleEx: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msTriangleEx
 {
 	msVec3		Normals[3];
 	msVec2		TexCoords[3];
 } msTriangleEx;
 
-/* msMesh */
+/* msMesh: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msMesh
 {
     byte        nFlags;
@@ -122,7 +140,7 @@ typedef struct msMesh
 	msTriangleEx *pTriangleExs;
 } msMesh;
 
-/* msMaterial */
+/* msMaterial: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msMaterial
 {
     int         nFlags;
@@ -136,6 +154,8 @@ typedef struct msMaterial
     char        szDiffuseTexture[MS_MAX_PATH];
     char        szAlphaTexture[MS_MAX_PATH];
     int         nName;
+	int			nWidth;
+	int			nHeight;
 	char*       pszComment;
 } msMaterial;
 
@@ -153,7 +173,7 @@ typedef struct msRotationKey
     msVec3  Rotation;
 } msRotationKey;
 
-/* msBone */
+/* msBone: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msBone
 {
     int             nFlags;
@@ -172,7 +192,7 @@ typedef struct msBone
 	char*			pszComment;
 } msBone;
 
-/* msModel */
+/* msModel: used internally only, DO NOT USE DIRECTLY, USE API INSTEAD */
 typedef struct msModel
 {
     int         nNumMeshes;
@@ -197,6 +217,7 @@ typedef struct msModel
 	msVec2		CameraRotationXY;
 
 	char*       pszComment;
+	char*		pszFileName;
 } msModel;
 
 
@@ -240,6 +261,8 @@ MSLIB_API void          msModel_SetCamera (msModel *pModel, msVec3 Position, msV
 MSLIB_API void          msModel_GetCamera (msModel *pModel, msVec3 Position, msVec2 RotationXY);
 MSLIB_API void          msModel_SetComment (msModel *pModel, const char *pszComment);
 MSLIB_API int           msModel_GetComment (msModel *pModel, char *pszComment, int nMaxCommentLength);
+MSLIB_API void          msModel_SetFileName (msModel *pModel, const char *pszFileName);
+MSLIB_API int           msModel_GetFileName (msModel *pModel, char *pszFileName, int nMaxFileNameLength);
 
 /**********************************************************************
  * msMesh
@@ -314,16 +337,18 @@ MSLIB_API int           msVertexEx_SetBoneIndices (msVertexEx* pVertex, int nInd
 MSLIB_API int           msVertexEx_GetBoneIndices (msVertexEx* pVertex, int nIndex);
 MSLIB_API int           msVertexEx_SetBoneWeights (msVertexEx* pVertex, int nIndex, int nWeight);
 MSLIB_API int           msVertexEx_GetBoneWeights (msVertexEx* pVertex, int nIndex);
+MSLIB_API unsigned int  msVertexEx_SetExtra (msVertexEx* pVertex, int nIndex, unsigned int nExtra);
+MSLIB_API unsigned int  msVertexEx_GetExtra (msVertexEx* pVertex, int nIndex);
 
 /**********************************************************************
  * msMaterial
  **********************************************************************/
 
+MSLIB_API void          msMaterial_Destroy (msMaterial *pMaterial);
 MSLIB_API void          msMaterial_SetFlags (msMaterial *pMaterial, int nFlags);
 MSLIB_API int           msMaterial_GetFlags (msMaterial *pMaterial);
 MSLIB_API void          msMaterial_SetName (msMaterial *pMaterial, const char *szName);
 MSLIB_API void          msMaterial_GetName (msMaterial *pMaterial, char *szName, int nMaxLength);
-MSLIB_API void          msMaterial_SetAmbient (msMaterial *pMaterial, msVec4 Ambient);
 MSLIB_API void          msMaterial_SetAmbient (msMaterial *pMaterial, msVec4 Ambient);
 MSLIB_API void          msMaterial_GetAmbient (msMaterial *pMaterial, msVec4 Ambient);
 MSLIB_API void          msMaterial_SetDiffuse (msMaterial *pMaterial, msVec4 Diffuse);
@@ -338,6 +363,10 @@ MSLIB_API void          msMaterial_SetTransparency (msMaterial *pMaterial, float
 MSLIB_API float         msMaterial_GetTransparency (msMaterial *pMaterial);
 MSLIB_API void          msMaterial_SetDiffuseTexture (msMaterial *pMaterial, const char *szDiffuseTexture);
 MSLIB_API void          msMaterial_GetDiffuseTexture (msMaterial *pMaterial, char *szDiffuseTexture, int nMaxLength);
+MSLIB_API void          msMaterial_SetDiffuseTextureWidth (msMaterial *pMaterial, int nWidth);
+MSLIB_API int           msMaterial_GetDiffuseTextureWidth (msMaterial *pMaterial);
+MSLIB_API void          msMaterial_SetDiffuseTextureHeight (msMaterial *pMaterial, int nHeight);
+MSLIB_API int           msMaterial_GetDiffuseTextureHeight (msMaterial *pMaterial);
 MSLIB_API void          msMaterial_SetAlphaTexture (msMaterial *pMaterial, const char *szAlphaTexture);
 MSLIB_API void          msMaterial_GetAlphaTexture (msMaterial *pMaterial, char *szAlphaTexture, int nMaxLength);
 MSLIB_API void          msMaterial_SetComment (msMaterial *pMaterial, const char *pszComment);
@@ -364,10 +393,12 @@ MSLIB_API void          msBone_GetInterpolatedRotation (msBone *pBone, msVec3 Ro
 MSLIB_API int           msBone_GetPositionKeyCount (msBone *pBone);
 MSLIB_API int           msBone_AddPositionKey (msBone *pBone, float fTime, msVec3 Position);
 MSLIB_API msPositionKey* msBone_GetPositionKeyAt (msBone *pBone, int nIndex);
+MSLIB_API void			msBone_RemovePositionKeyAt (msBone *pBone, int nIndex);
 
 MSLIB_API int           msBone_GetRotationKeyCount (msBone *pBone);
 MSLIB_API int           msBone_AddRotationKey (msBone *pBone, float fTime, msVec3 Rotation);
 MSLIB_API msRotationKey* msBone_GetRotationKeyAt (msBone *pBone, int nIndex);
+MSLIB_API void			msBone_RemoveRotationKeyAt (msBone *pBone, int nIndex);
 MSLIB_API void          msBone_SetComment (msBone *pBone, const char *pszComment);
 MSLIB_API int           msBone_GetComment (msBone *pBone, char *pszComment, int nMaxCommentLength);
 

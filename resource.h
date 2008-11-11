@@ -42,29 +42,44 @@
 #define IDC_MESH_SORT                   1015
 #define IDC_SEQ_EN_MORPH                1015
 #define IDC_SEQ_EN_TVERT                1016
+#define IDC_MESH_AUTOBB_ENABLE          1016
 #define IDC_SEQ_EN_VIS                  1017
+#define IDC_MESH_AUTOBB_EQU_STEPS       1017
 #define IDC_MAT_NAME                    1018
+#define IDC_MESH_AUTOBB_POLAR_STEPS     1018
+#define IDC_SEQ_GROUND_X                1018
 #define IDC_MESH_BB                     1019
 #define IDC_MAT_ENVMAP                  1019
+#define IDC_SEQ_GROUND_Y                1019
 #define IDC_MESH_BBZ                    1020
 #define IDC_SEQ_EN_TRANS                1020
 #define IDC_MAT_BUMPMAP                 1020
 #define IDC_SEQ_EN_IFL                  1021
 #define IDC_MAT_DETAILMAP               1021
+#define IDC_MESH_AUTOBB_INDEX           1021
 #define IDC_MAT_TRANSLUCENT             1022
 #define IDC_SEQ_IGNOREGND               1022
+#define IDC_MESH_AUTOBB_POLAR_ANGLE     1022
 #define IDC_MAT_ADD                     1023
 #define IDC_MESH_VIS_LIST               1023
+#define IDC_SEQ_IGNOREGND2              1023
 #define IDC_MAT_SUB                     1024
+#define IDC_MESH_AUTOBB_DIM             1024
+#define IDC_SEQ_GROUND_AUTO             1024
 #define IDC_MAT_SELF                    1025
+#define IDC_MESH_AUTOBB_INCLUDE_POLES   1025
+#define IDC_SEQ_GROUND_Z                1025
 #define IDC_MAT_NOMIPMAP                1026
 #define IDC_EXPORT_ANIM                 1026
 #define IDC_SEQ_TRIGGER_LIST            1026
 #define IDC_MAT_MIPZERO                 1027
 #define IDC_USE_CONFIG                  1027
+#define IDC_MESH_AUTOBB_SIZE            1027
+#define IDC_SEQ_GROUND_FPS              1027
 #define IDC_VALUE_1                     1028
 #define IDC_MESH_VIS_ADD                1028
 #define IDC_OUTPUT_DUMP                 1028
+#define IDC_MAT_DOUBLE_SIDED            1028
 #define IDC_VALUE_2                     1029
 #define IDC_MESH_VIS_EDIT               1029
 #define IDC_COPY_TEXTURES               1029
@@ -74,7 +89,13 @@
 #define IDC_SPLIT_DSQ                   1031
 #define IDC_PROGRESS_TEXT               1033
 #define IDC_PROGRESS_BAR                1034
+#define IDC_MESH_MULTIRES_ADD           1035
 #define IDC_MAT_REFLECTMAP              1036
+#define IDC_MESH_MULTIRES_EDIT          1036
+#define IDC_MESH_MULTIRES_REMOVE        1037
+#define IDC_MESH_MULTIRES_LIST          1038
+#define IDC_EDITVAL_A                   1039
+#define IDC_EDITVAL_B                   1040
 #define IDC_SHOWHELP                    1050
 
 // Next default values for new objects
@@ -83,7 +104,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1035
+#define _APS_NEXT_CONTROL_VALUE         1041
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

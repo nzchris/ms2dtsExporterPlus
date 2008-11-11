@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<title>Materials</title>
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1 id=MATERIALS_OVERVIEW>Materials</h1>
+
+<p>Most properties of a material can be edited using the Material Edit dialog box shown below.</p>
+
+<div align=center><img src="matedit.png" width="285" height="348" border="0" alt=""></div>
+
+<dl>
+   <dt>Material Name</dt><dd>Name of the material. This is used internally by the DTS shape and does not affect the actual texture used.</dd>
+   <dt>Detail Map</dt><dd>Name of the milkshape material to use as a detail map. See <a href="ms2dtsplus_materials.html#MATERIALS_DETAILMAP">Detail Mapping</a>.</dd>
+   <dt>Bump Map</dt><dd>Name of the milkshape material to use as a bump map. <i>Note that TGE does not yet support bumpmapped DTS shapes.</i></dd>
+   <dt>Reflectance Map</dt><dd>Name of the milkshape material to use as a reflectance map. <i>Not supported</i></dd>
+   <dt>Detail Scale</dt><dd>Scale of the detail map. See <a href="ms2dtsplus_materials.html#MATERIALS_DETAILMAP">Detail Mapping</a>.</dd>
+   <dt>Environment Mapping</dt><dd>Amount of environment mapping to apply. 0 for none. This value is a scaler (range 0-1) which is applied to the alpha channel of the texture to determine the level of environment mapping at each point.</dd>
+   <dt>Translucent</dt><dd>Enable transparency</dd>
+   <dt>Additive</dt><dd>Enable additive transparency (only valid if translucent flag is checked)</dd>
+   <dt>Subtractive</dt><dd>Enable subtractive transparency (only valid if translucent flag is checked)</dd>
+   <dt>Self Illuminating</dt><dd>Enable self-illumination (lighting doesn't affect it)</dd>
+   <dt>No Mip Mapping</dt><dd>Disable mip-mapping for this material</dd>
+   <dt>Mip Map Zero Border</dt><dd><i>TODO</i></dd>
+   <dt>Two Sided</dt><dd><i>Marks this material as two-sided. Triangles that use this material will be visible from both sides. The exporter does this by duplicating each triangle with the vertex order reversed. Note that TGEA allows true two-sided materials without duplicating the geometry, so this flag does not need to be set for models exported for use with TGEA.</i></dd>
+</dl>
+
+<h2 id=MATERIALS_DETAILMAP>Detail Mapping</h2>
+
+Detail maps allow you to blend two textures together as shown below:
+
+<div align=center><img src="detailmaps.png" width="448" height="217" border="0" alt=""></div>
+
+The detail material is scaled by the detail scale setting before being blended with the base material. The easiest method is to make the detail texture the same size as the base texture, and set detail scale to 1.
+
+You can find an example of a shape using detail mapping in the examples folder.
+
+<p><em>Note: The detail material is stored as the milkshape material index, so if you delete materials, you may need to set the name again.</em></p>
+
+<h2 id=MATERIALS_IFL>IFL Materials</h2>
+
+<p>An IFL file is a text file that describes which texture to use at each frame for a DTS shape. Animation sequences can be defined that use this information to switch textures automatically while the animation is playing.</p>
+
+<p>IFL materials are defined in milkshape by specifying a texture with a special name in the texture field of the material. The name of the texture is the same as the IFL text file, except it has _ifl appended.</p>
+
+<p>eg. An IFL file, player.ifl, is shown below:</p>
+
+<pre>
+texture1 2
+texture2 3
+texture3 1
+texture4 6
+</pre>
+
+<p>Each line describes the texture to use, and the duration (in frames) to display it.</p>
+
+<p>To use the IFL material in milkshape, a copy of the first image (texture1) is made and renamed to player_ifl. This new texture is used for uv mapping, and tells the exporter the name of the IFL file to use. It is only required during export, and is not actually used by the DTS shape.</p>
+
+<p>A sequence must have the EnableIFL flag set to make use of an IFL material. You can find an example of a shape using an IFL material in the examples folder.</p>
+
+<p><em>Note: IFL animations are not affected by the frame rate of the sequence in which they are played. The durations specified in the file are assumed to be at a frame rate of 30 fps.</em></p>
+
+</body>
+</html>

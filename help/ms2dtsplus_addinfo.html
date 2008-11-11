@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<title>Additional Information</title>
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1>Additional Information</h1>
+
+<h2 id=ADDINFO_STRUCTURE>Shape Structure</h2>
+
+<p>Many 3D modelling programs support some kind of tree structure that controls the hierarchy of various elements within the shape. Unfortunately, Milkshape does not support a node hierarchy so the exporter attempts to fit the Milkshape model to the following structure:</p>
+
+<pre>
+ROOT
+|
+|-__mainTree
+|   |
+|   |-LOD Markers
+|   |-__meshes
+|        |
+|        |-skeleton (including Root bone)
+|          |
+|          |-rigid meshes
+|
+|-skinned meshes
+|-animation sequences
+|-bounds mesh
+</pre>
+
+<ul>
+   <li>The '__mainTree' and '__meshes' nodes are dummy nodes created automatically by the exporter. They are part of the default NeverExport list, so are not present in the exported shape. If you use your own configuration file, you should add these two nodes to the NeverExport list.</li>
+   <li>LOD markers are created automatically for any detail levels that have been defined in the model. They are written into the DTS shape, and have the form:
+   <ul>
+      <li>DetailN for regular mesh details (size N)
+      <li>LOSN for line of sight collision mesh details
+      <li>CollisionN for collision mesh details
+   </ul></li>
+   <li>Rigid meshes are those that have all their vertices attached to one bone. The 'Root' bone is automatically created by the exporter if it does not already exist in the shape, and is used to catch vertices that are not attached to any bone. These meshes appear in the shape hierarchy below the bone to which they are attached.</li>
+   <li>Skinned meshes are those that have their vertices attached to more than one bone. Vertices not attached to a bone are automatically attached to the 'Root' bone.</li>
+   <li>The 'bounds' mesh is a box that contains all objects in the Milkshape model. You may define your own bounding box by creating a mesh called 'Bounds'. If no such mesh exists, it will be created automatically by the exporter.</li>
+</ul>
+
+<p>You can check the structure of the exported shape by looking at the dump file.</p>
+
+<p><em>Note: The bounds mesh and root bone are automatically created by the exporter if they do not already exist in the model. After the export process, they are automatically removed so the model remains unchanged. The bounds mesh and root bone can be retained by selecting 'Create Bounds Mesh' from the export dialog, then exporting or pressing 'Apply'.</em></p>
+
+<h2 id=ADDINFO_DEFCFG>Default Configuration</h2>
+
+<p>The exporter supports configuration files. If a configuration file is not found, the following default configuration is used:</p>
+
+<pre>
++Error::AllowUnusedMeshes
+
+-Materials::NoMipMap
+-Materials::NoMipMapTranslucent
++Materials::ZapBorder
+
++Param::SequenceExport
+-Param::CollapseTransforms
+
+=Params::AnimationDelta 0.0001
+=Params::SkinWeightThreshhold 0.001
+=Params::SameVertTOL 0.00005
+=Params::SameTVertTOL 0.00005
+=Params::weightsPerVertex 1
+
++Dump::NodeCollection
++Dump::ShapeConstruction
++Dump::NodeCulling
++Dump::NodeStates
++Dump::NodeStateDetails
++Dump::ObjectStates
++Dump::ObjectStateDetails
++Dump::ObjectOffsets
++Dump::SequenceDetails
++Dump::ShapeHierarchy
+
+NeverExport
+__mainTree
+__meshes
+</pre>
+
+<p>A '+' sets the setting to true, '-' sets it to false, and '=' is used to set the value of a setting. Nodes in the 'NeverExport' list are not written to the DTS file. This list is mostly used for DSQ export to exclude non-animating nodes. Names in the NeverExport list can include wildcards (*). eg 'leg*' matches both 'leg1' and 'leg2'.</p>
+
+<dl>
+   <dt>Error::AllowUnusedMeshes</dt><dd>If true, unused meshes will not cause an exporter error.</dd>
+   <dt>Materials::NoMipMap</dt><dd>Disable mip-mapping on all textures.</dd>
+   <dt>Materials::NoMipMapTranslucent</dt><dd>Disable mip-mapping on translucent textures only.</dd>
+   <dt>Materials::ZapBorder</dt><dd>If set, translucent, non-tiling materials will automatically have the MipMapZeroBorder flag set. See <a href="ms2dtsplus_materials.html#MATERIALS_OVERVIEW">Materials</a>.</dd>
+   <dt>Param::SequenceExport</dt><dd>Allow animation sequences to be exported.</dd>
+   <dt>Param::CollapseTransforms</dt><dd>If set, nodes that do not contain any objects are removed.</dd>
+   <dt>Params::AnimationDelta</dt><dd>Minimum change in position or scale required for a node transform to be recognised as different to the previous transform.</dd>
+   <dt>Params::SkinWeightThreshhold</dt><dd>Minimum bone weighting for a vertex to be affected by that bone. <i>By default, if only one bone is attached to a vertex it will have weight 1, and bones not attached have weight 0.</i></dd>
+   <dt>Params::SameVertTOL</dt><dd>Minimum distance between vertices for them to be considered unique. The DTS file format stores the X,Y,Z position of each vertex in a table, then each triangle in a mesh uses indices into the vert table. Vertices closer together than the minimum distance will store only a single entry in the vert table (the shared position will be the first vertex found). Note that this has no effect on texture mapping, and is not the same as welding two vertices together in Milkshape. Set this parameter to 0 to disable it.</dd>
+   <dt>Params::SameTVertTOL</dt><dd>Minimum distance between texture coordinates for them to be considered unique. The DTS file format stores texture coordinates in a table. Coordinates closer together than this minimum distance will store only a single entry in the tvert table (the shared coordinates will be the first tvert found).</dd>
+   <dt>Params::weightsPerVertex</dt><dd>Maximum number of bone weights per vertex. Since version 2.6.1, the ms2dtsExporter supports up to 3 weights per vertex.</dd>
+   <dt>Dump::NodeCollection</dt><dd>Output details of the node collection process to the dump file.</dd>
+   <dt>Dump::ShapeConstruction</dt><dd>Output details of the shape construction process to the dump file.</dd>
+   <dt>Dump::NodeCulling</dt><dd>Output details of which nodes have been culled to the dump file.</dd>
+   <dt>Dump::NodeStates</dt><dd>Output node states to the dump file.</dd>
+   <dt>Dump::NodeStateDetails</dt><dd>Output node state information to the dump file.</dd>
+   <dt>Dump::ObjectStates</dt><dd>Output object states to the dump file.</dd>
+   <dt>Dump::ObjectStateDetails</dt><dd>Output object state information to the dump file.</dd>
+   <dt>Dump::ObjectOffsets</dt><dd>Output object offset information to the dump file.</dd>
+   <dt>Dump::SequenceDetails</dt><dd>Output sequence details to the dump file.</dd>
+   <dt>Dump::ShapeHierarchy</dt><dd>Output the shape hierarchy to the dump file.</dd>
+</dl>
+
+<h2 id=ADDINFO_DUMP>Dump Files</h2>
+
+<p>When the shape is exported, a file called dump.dmp may be created in the same directory as the dts file. This text file contains details of the export process, as well as the final structure of the exported shape. It may be useful to track down problems with the shape or the export process.</p>
+
+</body>
+</html>

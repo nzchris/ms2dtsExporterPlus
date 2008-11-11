@@ -1,0 +1,6 @@
+DESCRIPTION 'TGE MilkShape DTS Exporter'
+
+VERSION     1.0
+
+EXPORTS
+    CreatePlugIn

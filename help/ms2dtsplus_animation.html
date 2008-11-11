@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<title>Animation</title>
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1 id=ANIM_OVERVIEW>Animation</h1>
+
+<p>MilkShape only provides a single animation timeline, but the Torque Engine supports multiple animation sequences, each of which can be named and have different properties. Multiple sequences in MilkShape are animated on the main timeline and are split into separate sequences by the exporter. For this to happen, animation sequences must be declared indicating where each sequence starts and ends on the master timeline. This is done through materials with special names (a '*' at the start of a material name indicates that it is a sequence description). The easiest way to define sequences is using the export dialog box:</p>
+
+<div align=center><img src="seqedit.png" width="350" height="424" border="0" alt=""></div>
+
+<dl>
+   <dt>Name</dt><dd>Name of the sequence.</dd>
+   <dt>First Frame</dt><dd>First frame (inclusive) in the sequence. This number should match the frame number in the milkshape animation timeline.</dd>
+   <dt>Last Frame</dt><dd>Last frame (inclusive) in the sequence. This number should match the frame number in the milkshape animation timeline.</dd>
+   <dt>Cyclic</dt><dd>If turned on, the sequence will loop (e.g. walk and run animations). If turned off, the sequence will play once then stop (e.g. death animations). </dd>
+   <dt>FPS</dt><dd>Frames per second for this animation. This does not affect the number of keyframes, only how fast they will be played back.</dd>
+   <dt>Priority</dt><dd>Controls what sequence will affect a node when two sequences want to control the same node. The sequence with higher priority will control the node.</dd>
+   <dt>Override Duration</dt><dd>If you override the sequence duration, it will change the duration of the sequence when it plays in the game at time scale 1, but it won't otherwise change the animation data (same keyframes will be used, they'll just play at different times). This is useful for altering the speed of the ground transform of an object without scaling the animation. Most of the time, this is not used, and should be set to -1.</dd>
+   <dt>Ignore Ground</dt><dd>Don't export a ground transform for this sequence. This should usually be false. See <a href="ms2dtsplus_animation.html#ANIM_GROUND">Ground Transforms</a> for more details.</dd>
+   <dt>Blend</dt><dd>Makes the sequence a blend animation. See <a href="ms2dtsplus_animation.html#ANIM_BLEND">Blended Animations</a> for details.</dd>
+   <dt>Blend Reference Frame</dt><dd>The reference frame number for the blend animation. Only valid if the blend flag is set. See <a href="ms2dtsplus_animation.html#ANIM_BLEND">Blended Animations</a> for more details.</dd>
+   <dt>Triggers</dt><dd>Set of trigger keyframes and states. See <a href="ms2dtsplus_animation.html#ANIM_TRIGGERS">Triggers</a> for details.</dd>
+   <dt>EnableMorph</dt><dd>This will force the exporter to export all mesh animations as a series of mesh snapshots. This is useful for certain types of animations (e.g. flags), but it will produce large files and does not contain animated nodes. <strong>UNTESTED</strong></dd>
+   <dt>EnableTVert</dt><dd>Enables animated texture coordinates. See <a href="ms2dtsplus_animation.html#ANIM_TEXTURE">Texture Animations</a> for details.
+   <dt>EnableVis</dt><dd>Enables use of the visibility channel. See <a href="ms2dtsplus_animation.html#ANIM_VIS">Visibility Channel</a> for details.</dd>
+   <dt>EnableTransform</dt><dd>Enables transform (eg translation and rotation) animation. Normally this setting is enabled.</dd>
+   <dt>EnableIFL</dt><dd>Enables IFL animation. See <a href="ms2dtsplus_materials.html#MATERIALS_IFL">IFL Materials</a> for details.</dd>
+</dl>
+
+<h2 id=ANIM_GROUND>Ground Transforms</h2>
+
+<p>Animation sequences that move the character must export a ground transform. The engine knows that the character has a specific velocity in all directions (this is set in script). When the animations are being played, the engine is aware of what the distance covered is and plays the appropriate animation. If, for instance, the forward velocity of the character increases past the point of a walk animation to the speed of a run, it will transition to the run.</p>
+
+<p>The exporter figures out the ground transform (meters per second over a given distance) by determining how much the bounding box has moved over the course of the animation in the ms3d file. This is done automatically on export.</p>
+
+<p>If you have no ground transform, the animation will not play properly when the character moves. In the Torque Engine with the default character, the forward ground transform is approx=4m/sec.</p>
+
+<p><em>Note: The bounding box is simply a mesh with the name 'Bounds'. It is normally attached to the Root bone. You can use the main export dialog to create the bounds mesh for you automatically.</em></p>
+
+<h2 id=ANIM_BLEND>Blended Animations</h2>
+
+<p>Blend animations allow additive animation on the node structure of the shape. These will not conflict with other threads, and can be played on top of the node animation contained in other threads. Such animations are relative. Blends only read the changes that occur over the course of the animation and not the absolute position of the nodes. This means that if a node is transformed by a blend animation, it includes only the transform information for that node, and it will add that transformation on top of the existing position in the base shape (the DTS).</p>
+
+<p>Bear in mind that a blend can be played as a normal sequence, or it can be played on top of other sequences. When another sequence is playing, it will alter the root position, and the blend will be applied on top of that.</p>
+
+<p>If you try to do a blend sequence where the root position is different than the 'normal' root (in the default root animation), you might expect that the blend will blend it to the new root (the position the character is positioned in during the blend animation). However, it does not work this way. Since nothing would actually be animating, it doesn't move the bones to the new position. What is contained in the blend sequence is only transform offsets from the blend sequence root position.</p>
+
+<p>It is not a good idea to have a different root position in your 'normal' animations and your blends, as they can easily get out of sync.</p>
+
+<p>You can determine the position that the blend animation uses for the animation offset by using the blend reference frame.</p>
+
+<p>The values added from the blend animation are based on the root position in the DTS/DSQ file. This root position does not have to be the beginning of the animation. You can pick any position for the blend animation to reference.</p>
+
+<p>This is useful, because you can have a blend animation that can have a reference position that is the 'root' position. For animation like hip twists and arm movements (as in the 'look' animation), the character can be in a natural default state. In this way, you can have one animation control the character through the base pose to an extreme in either direction while referencing the default 'base' state, which will exist somewhere in the middle of the blend animation.</p>
+
+<h2 id=ANIM_TEXTURE>Texture Animations</h2>
+
+<p>This is useful for things where the texture itself must animate. Scrolling computer monitors, waterfalls, and tank treads are just a few of the applications for animated texture coordinates.</p>
+
+<em>Note: Texture animation is not yet supported by this exporter. Non-smooth texture animation can be faked using IFL materials. See <a href="ms2dtsplus_materials.html#MATERIALS_IFL">IFL Materials</a> for details.</em>
+
+<h2 id=ANIM_VIS>Visibility Channel</h2>
+
+<p>A mesh can define a visibility channel (see <a href="ms2dtsplus_meshes.html#MESHES_OVERVIEW">Meshes</a>). Sequences that have the enableVis flag set can use this set of keyframes to control the transparency of the mesh during the sequence. This is useful for parts of the model that you may only wish to show during certain animations.</p>
+
+<h2 id=ANIM_TRIGGERS>Triggers</h2>
+
+<p>Triggers are arbitrary markers that can be used to call events on specific frames in a sequence. An example of a triggered event is calling footstep sounds and footprints during walk and run animations.</p>
+
+<p>Triggers can be added to and removed from a sequence by using the Add and Remove buttons in the Edit Sequence dialog. You may define up to 30 independent triggers per sequence.</p>
+
+<p>TriggerFrame is the frame number on which a trigger event occurs.</p>
+
+<p>TriggerState defines the state of a trigger. There can be up to 30 trigger states each with their respective on (1 to 30) and off (-1 to -30) values. What each of those trigger states means is up to you. You should work with your programmer to define what the trigger states mean and how you should use them.</p>
+
+<p>For example, you could have one trigger for each foot of a character that creates a footprint when the foot is down on the ground. Let's say that a triggerState of 1 is the left foot down and a triggerState of 2 is the right foot down. When the sequence plays the frame during which the left foot touches the ground, you could have a trigger on that frame that has a triggerState of 1 to create a footprint. You would then create another trigger with a triggerState of 2 for the right foot. You don't necessarily need to turn off the footprints (let's assume that the programmer will turn them off when it is necessary), but you could by creating two more triggers with triggerStates -1 and -2.</p>
+
+<p>There is one triggerFrame and triggerState per trigger. Trigger numbering starts at 0. For example, triggerFrame0 and triggerState0 are the first trigger, triggerFrame1 and triggerState1 are the second trigger, etc. Note that when you delete triggers from the list, all of the remaining triggers are renumbered starting from 0. Their frame and state attributes are retained.</p>
+
+<p>Any sequence that makes use of triggers must have the ignoreGround checkbox cleared, or the triggers will not work ingame.</p>
+
+<h2 id=ANIM_DSQ>DSQ Export</h2>
+
+<p>Exporting animations to a DSQ file allows you to share animations with multiple DTS shapes.  DSQ files are loaded at runtime via script. eg.</p>
+
+<pre>
+datablock TSShapeConstructor(PlayerDts)
+{
+   baseShape = "./player.dts";
+   sequence0 = "./player_root.dsq root";
+   sequence1 = "./player_forward.dsq run";
+   sequence2 = "./player_back.dsq back";
+}
+</pre>
+
+<p>The 'run' sequence can now be played as if it were part of the original DTS shape. A DSQ file may contain more than one animation, and is accessed like this:</p>
+
+<pre>
+datablock TSShapeConstructor(PlayerDts)
+{
+   baseShape = "./player.dts";
+   sequence0 = "./player_anim.dsq root";
+   sequence1 = "./player_anim.dsq run";
+   sequence2 = "./player_anim.dsq back";
+}
+</pre>
+
+<p>For a DSQ file to be compatible with a DTS shape, all nodes that they have in common must be in <b>exactly</b> the same base position and rotation. Only animated nodes need to be exported to the DSQ file.</p>
+
+<p><em>Note: Milkshape normalises all bone rotations. This can be seen by opening the 'Mr Box' example file, then rotating any bone. You will notice that <b>all</b> of the bones change their rotation. This is a milkshape issue, and has nothing to do with the exporter. The result of this normalisation process is that animations produced by milkshape may not be compatible with the default Orc player. DSQ files exported from milkshape should be compatible with DTS files exported from milkshape however.</em></p>
+
+<h2 id=ANIM_BONE_WEIGHT>Bone Weights</h2>
+
+<p>The exporter supports up to 3 bone weights per vertex to be exported. Using bone weighting is the best way to achieve more natual animations, and helps prevent the stretching and distortion of meshes around joints (such as elbows in a humanoid mesh).</p>
+
+<p>Milkshape originally supported only 1 bone weight per vertex, so a plugin is required to access the extra 2 weights. The only plugin currently available is the <i>Sims2 UniMesh</i> plugin that is included with the Milkshape 1.7.8 install.</p>
+
+<p>Note that this plugin is not related to or required by this exporter - it merely provides a way to edit the 3 bone weights, which may then be exported to a DTS shape. Please refer to the documentation for the <i>Sims2 UniMesh</i> plugin for details on its use.</p>
+
+<p>By default (if no extra weights are set) shapes are still exported with only 1 weight per vertex.</p>
+
+</body>
+</html>

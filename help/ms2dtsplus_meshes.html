@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Meshes</title>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1 id=MESHES_OVERVIEW>Meshes</h1>
+
+<p>Most properties of a mesh can be edited using the Mesh Edit dialog box shown below.</p>
+
+<div align=center><img src="meshedit.png" width="443" height="264" border="0" alt=""></div>
+
+<dl>
+   <dt>Name</dt><dd>Name of the mesh, not including the LOD number which is automatically appended to the end of the name.</dd>
+   <dt>LOD</dt><dd>Detail level for this mesh. The detail level indicates to the exporter what mesh is to be drawn at a given distance. The number corresponds to the pixel size in the game engine at which the shape will draw with these meshes. Meshes with negative detail levels will be exported, but not drawn. If your mesh has only one detail level, use 0.</dd>
+   <dt>Billboard</dt><dd>Checked if this mesh is a billboard. See <a href="ms2dtsplus_meshes.html#MESHES_BILLBOARD">Billboards</a> for more details.</dd>
+   <dt>Z Billboard</dt><dd>Checked if this mesh is a Z billboard. See <a href="ms2dtsplus_meshes.html#MESHES_BILLBOARD">Billboards</a> for more details.</dd>
+   <dt>Sort</dt><dd>Checked if this mesh should be sorted. See <a href="ms2dtsplus_meshes.html#MESHES_SORTED">Sorted Meshes</a> for more details.</dd>
+   <dt>Visibility Channel</dt><dd>This list box defines keyframes for the meshes visibility channel. See <a href="ms2dtsplus_meshes.html#MESHES_VIS">Visibility</a> for more details.</dd>
+   <dt>Multires</dt><dd>This list box defines auto-detail settings. See <a href="ms2dtsplus_meshes.html#MESHES_AUTODETAIL">Multires</a> for more details.</dd>
+   <dt>Enable AutoBillboard</dt><dd>Enables an auto-billboard detail level to be created for this mesh. See <a href="ms2dtsplus_meshes.html#MESHES_AUTO_BILLBOARD">Auto Billboards</a> for more details.</dd>
+   <dt>Size</dt><dd>LOD size for the auto-billboard detail level</dd>
+   <dt>Index</dt><dd>Defines the detail level to use when generating the snapshots. Note that this is an array index rather than a detail size. So if an object has detail sizes of: 200, 150, 40, then setting Index to 1 will generate the snapshot using detail size 150.</dd>
+   <dt>Dimension</dt><dd>Defines the size of the billboard images in pixels (must be a power of 2: eg. 2, 4, 8, 16....128). The larger the number, the more detailed the billboard will be.</dd>
+   <dt>Equator Steps</dt><dd>This defines the number of snapshots to take around the equator. Imagine the object being rotated around the vertical axis, then a snapshot taken at regularly spaced intervals.</dd>
+   <dt>Polar Steps</dt><dd>This defines the number of snapshots taken between the poles, at each equator step. eg. At each equator snapshot, the globe is tilted towards each pole, and a number of snapshots taken.</dd>
+   <dt>Include Poles</dt><dd>If true, then object snapshots will be taken at the two poles. ie. with the camera looking directly down and directly up at the object.</dd>
+   <dt>Polar Angle</dt><dd>If pole snapshots are active ('Include Poles' is set), this parameter defines the camera angle within which to render the pole snapshot. eg. if 'Polar Angle' is set to 0.437 radians (25 degrees), then the snapshot taken at the pole (looking directly down or up at the object) will be rendered when the camera is within 25 degrees of the pole.</dd>
+</dl>
+
+<h2 id=MESHES_LOD>Level of Detail</h2>
+
+<p>Detail levels indicate to the exporter what mesh is to be drawn at a given distance. The number corresponds to the pixel size in the game engine at which the mesh will be rendered. This is done by naming different detail levels of the same mesh with the same base name but a different trailing number.</p>
+
+<p>e.g. If you have meshes named 'head2' and 'head36', then when the size is 36 or greater the head36 mesh would be drawn. When the size is between 2 and 36 head2 would be drawn, and when the size was less than 2 nothing would draw.</p>
+
+<p>Pixel sizes are inversely proportional to the distance an object is from the camera, so a larger value (like 36) indicates the object is much closer to the camera than a smaller value (like 2).</p>
+
+<p>The original Milkshape exporter output shapes with all visible meshes at detail level 0 (ie render the same mesh no matter how far away it is from the camera). If you are not making use of LOD, this is the best value to give to visible meshes.</p>
+
+<p><em>Note: The exporter treats a trailing underscore character ('_') as a minus sign ('-'). Because of this, an underscore at the end of a mesh name will negate the detail level. eg. a mesh named <b>MyMesh_2</b> will be renamed to <b>MyMesh</b> with detail level <b>-2</b>. Underscores in the middle of the name are not affected. eg. <b>My_Mesh2</b> denotes a mesh called <b>My_Mesh</b> with detail level <b>2</b>.</em></p>
+
+<h2 id=MESHES_BILLBOARD>Billboards</h2>
+
+<p>Parts of a shape can be billboard objects (i.e., they always face the camera). So, for example, you could have an explosion in which shrapnel flies out from the center and also have little explosion balls fly out that are just flat polygons that always face you.</p>
+
+<div align=center><img src="billboards.png" width="669" height="276" border="0" alt=""></div>
+
+<p>You make an object a billboard object by ticking the Billboard or Z Billboard check boxes in the Edit Mesh dialog box. Note that not all detail levels of the object need to be billboard objects, so the highest detail level of a shape could be a complicated 3d shape, whereas the lowest detail could just be a billboard. Z billboards are the same as regular billboards except that they only rotate about the z (vertical) axis.</p>
+
+<p><em>Note: These objects tend to have strange sorting properties if translucent materials are used.</em></p>
+
+<p>The center of rotation for the billboard object is the position of the joint that the object is attached to. To attach the billboard object to a different joint, just assign all of the mesh vertices to that joint. If the billboard mesh vertices are not attached to any joint, they will be automatically assigned to the 'root' joint (which is placed at the origin during export if it does not already exist). The bb_test.ms3d example demonstrates this feature.</p>
+
+<div align=center></div>
+
+<h2 id=MESHES_SORTED>Sorted Meshes</h2>
+
+<p>Objects with translucent textures often times appear to sort improperly in the engine. On modern graphics hardware, drawing on the screen amounts to storing values on the graphics card for the red, green, and blue channel, and also storing values for the distance of the fragment from the camera. The later value is often referred to as the "depth-value" or "z-value". The depth value is important for determining what should be drawn in front of what.</p>
+
+<p>To understand how this works, you have to understand one basic point: polygons are always drawn in an order. One is drawn first, another second, etc. So when the second is being drawn, the value of the first polygon is sitting in the frame buffer (the place on the graphics card that holds what you are drawing on the screen). This means that the graphics hardware can simply compare the depth value of the incoming pixel against the depth value of the stored pixel, and only update the frame buffer if the incoming pixel is in front of the stored pixel. That is exactly what happens.</p>
+
+<p>Drawing translucent fragments also requires a combination of what is in the frame buffer already and the incoming fragment. With translucency, the incoming fragment has an "alpha-value" in addition to red, green, and blue, and the alpha value is used to blend the fragment with the framebuffer. An alpha of 1 means to over-write what's in the buffer, an alpha of 0 means not to touch the frame buffer, and an alpha of 0.5 means to mix them equally.</p>
+
+<p>Translucent drawing with depth tests gets very tricky. If polygons are drawn back to front, depth tests and translucency behave well together. But when some polygons in the front are drawn first, things start to get very messy. Imagine what would happen if you had a fully translucent texture (alpha of 0) drawn first, and that it fully covered the camera and was in front of everything else. Since the alpha value is zero everywhere, it would not draw to the RGB channels. But the depth value would still be updated for the entire screen. Now everything that was drawn would fail the depth test. The result is that you would see a blank screen no matter what you draw behind the phantom polygon.</p>
+
+<p>Because of this issue, translucent polygons are normally drawn with special care: the depth value is not saved but the depth test is still used. Translucent polygons are drawn after non-translucent polygons, and translucent polygons are drawn from back to front. The result is that translucent polygons behave when they overlap each other because they are drawn back to front. Translucent polygons behave when overlapping non-translucent polygons because they only drawn when they are in front of the non-translucent polygons (remember, the depth test is still carried out, the depth value just isn't stored). The phantom polygon issue is avoided because the depth value isn't stored.</p>
+
+<p>One consequence of all this is that any object that draws translucent polygons must do so with special care. Furthermore, the engine itself must take special care to draw everything in the right order. In particular, the most accurate way for the game to draw the scene is to first draw the non-translucent polygons of all objects, then draw the translucent polygons of each object from furthest to closest to the camera. Each object, then, is only responsible for drawing it's own polygons so that they can sort amongst themselves.</p>
+
+<p>Three space has several mechanisms built in to handle the sorting of polygons. First, parts with only non-translucent polygons are drawn first, then parts with a mixture of translucent and non-translucent polygons, and then translucent parts. Note that if you have several parts with mixed polygon types, you will likely get some inappropriate sorting, so don't do this. These are all the measures 3space takes by default. However, there are special objects that do a little more sorting on their own. These are the sort objects described below. What these objects do is order the polygons so that they will always draw back to front. Believe it or not, it is often possible to do this for all camera angles. This however, it is not always possible. In those cases, the object has different orderings for different angles (usually only a few are needed) and in really bad cases, polygons have to be split. The latter can sometimes lead to large file size. If you see this happening, you should redesign the shape.</p>
+
+<p>The faces of these objects are presorted so that faces are drawn from back to front. This is used to force the sorting order of translucent objects (which are not z-buffered) This sometimes involves splitting faces and sometimes involves different orders depending on where the camera is.</p>
+
+<p>To make an object a sort object, tick the Sort checkbox in the Edit Mesh dialog box. Other detail levels of this object do not have to be sort objects. You can also give the exporter some hints on how to create the sort objects. You supply these hints by editing the sort fields in the Edit Mesh dialog. The fields are:</p>
+
+<dl>
+   <dt>Up</dt><dd>Used to sort objects with 'leaves' that are layered from top to bottom facing slightly up.</dd>
+   <dt>Down</dt><dd>Used to sort objects with 'leaves' that are layered from top to bottom facing slightly down.</dd>
+   <dt>NumBigFaces</dt><dd><i>TODO</i> Default 4.</dd>
+   <dt>Max Depth</dt><dd>Maximum recursion depth when sorting mesh. Default 2.</dd>
+</dl>
+
+<strong>UNTESTED</strong>
+
+<h2 id=MESHES_VIS>Visibility</h2>
+
+<p>Visibility keyframes can be defined to control the 'alpha' value of a mesh when it is rendered. Frames between keyframes are interpolated, frames outside the keyframe range are clipped to the keyframe range. Visibility ranges from 0 (invisible) to 1 (fully opaque). A sequence must have Enable Visibility set to use a meshes visibility channel.</p>
+
+<p><em>Note: Only rigid meshes (ie meshes attached to a single bone) can have their visibility animated.</em></p>
+
+<h2 id=MESHES_COLLISION>Collision Meshes</h2>
+
+<p>Any mesh whose name begins with 'Collision' will be used ingame as a collision mesh. Collision meshes are normally given a negative detail level from -1 to -8 so that they are not drawn, but you can make the collision mesh visible by giving it a positive detail level.</p>
+
+<p>Collision meshes should use as few polygons as possible, and <b>must</b> be convex. The more polygons contained in the collision mesh, the greater the CPU load in determining collisions with other objects.</p>
+
+<h2 id=MESHES_LOSCOL>LOS Collision Meshes</h2>
+
+<p>Any mesh whose name begins with 'LOSCol' will be used as a line of sight collision mesh. These meshes are used for line of sight collision tests such as checking if a bullet will hit the model. These meshes are normally given a negative detail level from -9 to -16 so that they are not drawn. You can view the LOS collision mesh ingame by giving it a positive detail level.</p>
+
+<p>Like regular collision meshes, LOS meshes should use as few polygons as possible, and <b>must</b> be convex.</p>
+
+</body>
+</html>

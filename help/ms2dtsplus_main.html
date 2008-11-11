@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Main Dialog</title>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1 id=MAIN_OVERVIEW>Main Dialog</h1>
+
+<p>The main exporter dialog box appears when you select the "Torque DTS Plus..." exporter from the File-&gt;Export list. All meshes, materials and animation sequences that are to be exported are listed here, and many of the properties of each can be modified before exporting.</p>
+
+<p>To edit a mesh, material or sequence, select the object by clicking the name in the first column of the list. Then press the Edit button to open the relevant edit dialog. Any changes made while the main dialog box is open are applied to the model unless you select Cancel.</p>
+
+<p><em>The Milkshape SDK does not support shared vertices between mesh groups, so after exporting, seams may appear in the milkshape model that are not present in the exported model. This is easily resolved by selecting the vertices and rewelding.</em></p>
+
+<div align=center><img src="exportdlg.png" width="419" height="450" border="0" alt=""></div>
+
+<dl>
+   <dt>Meshes</dt><dd>Lists all meshes that will be exported, as well as their detail level. Edit a mesh by clicking its name, then selecting Edit.</dd>
+   <dt>Materials</dt><dd>Lists all materials that will be exported. Materials in the model that are not attached to any mesh are not included. Edit a material by clicking its name, then selecting Edit.</dd>
+   <dt>Sequences</dt><dd>Lists all defined animation sequences, as well as some of their properties. Edit a sequence by clicking its name, then selecting Edit.</dd>
+   <dt>Add</dt><dd>Add a new sequence. The sequence editor dialog box will open so you can edit the new sequence. New sequences will be added to the Milkshape model unless you press Cancel.</dd>
+   <dt>Remove</dt><dd>Removes the selected sequence. Removed sequences will be removed from the Milkshape model unless you press Cancel.</dd>
+   <dt>Scale</dt><dd>Global scale factor applied to the model when it is exported.</dd>
+   <dt>Use .cfg File</dt><dd>If checked, the exporter will search for a config file with the same name as the exported shape. eg shape.cfg for the exported shape.dts. If unchecked, the default configuration will be used. See <a href="ms2dtsplus_addinfo.html#ADDINFO_DEFCFG">Default Configuration</a>.</dd>
+   <dt>Output Dump File</dt><dd>If checked, a file called dump.dmp will be created in the same directory as the exported shape. See <a href="ms2dtsplus_addinfo.html#ADDINFO_DUMP">Dump Files</a></dd>
+   <dt>Export Animations</dt><dd>If checked, animation information will be written to the DTS shape. This flag is ignored when exporting DSQ files.</dd>
+   <dt>Copy Textures</dt><dd>If checked, all textures used in the exported shape will be copied to the export directory. This flag is ignored when exporting DSQ files.</dd>
+   <dt>Generate .cs file</dt><dd>If checked, a TorqueScript .cs file will be created that can be used to load the shape (with DSQ animations) in TGE. This flag is ignored when exporting DTS files.</dd>
+   <dt>Split DSQ export</dt><dd>If checked, each animation will be stored in a separate DSQ file. The name of each file is <i>base_animname.dsq</i>. Where <i>base</i> is the name chosen in the 'Save As' dialog, and <i>animname</i> is the name of the animation. If this flag is unchecked, all animations will be stored in the same DSQ file. This flag is ignored when exporting DTS files.</dd>
+   <dt>Apply</dt><dd>Apply changes to the Milkshape model. The exporter dialog box will remain open.</dd>
+   <dt>Cancel</dt><dd>Close the exporter dialog box without applying any changes.</dd>
+   <dt>Help</dt><dd>Display this page.</dd>
+   <dt>Create Bounds Mesh</dt><dd>Creates the bounding box mesh and Root bone if they do not already exist.  The bounding box is a cube 1 Milkshape unit larger than the extents of the current model. The changes will be applied to the model unless you press Cancel. See <a href="ms2dtsplus_addinfo.html#ADDINFO_STRUCTURE">Shape Structure</a>.</dd>
+   <dt>Export DTS</dt><dd>Export the current shape to a dts file.</dd>
+   <dt>Export DSQ</dt><dd>Export all animation sequences to a dsq file. See <a href="ms2dtsplus_animation.html#ANIM_DSQ">DSQ Export</a>.</dd>
+</dl>
+
+</body>
+</html>

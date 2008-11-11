@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<title>Comment Strings</title>
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1>Comment Strings</h1>
+
+<p id=COMMENTS_OVERVIEW>Versions of milkshape before 1.7.4 did not provide any means of storing additional user information in the model. The original ms2dtsExporter stored a small number of properties in the name of the mesh or material. eg. seq:walk=1-4,cyclic. Previous versions of ms2dtsExporterPlus continued this practice, although because there were far more properties to store, they were packed into a binary form, resulting in names that looked like this: *Walk=@!]!!!?&!b!!.</p>
+
+<p>All user properties are now stored in the comment string of the model, mesh and material objects. There are 3 types of properties, floating point, integer and boolean (true/false). Each group stores the number of properties in that group, then a list of name=value pairs, each on a new line.</p>
+
+<p>eg. The comment string of an animation sequence may look like this:</p>
+
+<pre>
+1
+frameRate=30
+4
+endFrame=4
+startFrame=1
+numTriggers=1
+triggerFrame0=1
+triggerState0=-1
+1
+cyclic=1
+</pre>
+
+<p>Comment strings can be edited manually, but very little validation is performed when they are read by the exporter, so manual editing should be avoided. The export dialog boxes provide a much better way to edit object properties.</p>
+
+</body>
+</html>

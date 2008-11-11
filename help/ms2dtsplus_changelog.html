@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="./help_stylesheet.css">
+<title>Change Log</title>
+<meta name="Generator" content="EditPlus">
+<meta name="Author" content="Chris Robertson">
+</head>
+
+<body>
+<h1>Change Log</h1>
+
+<h2>Version 2.8.0 - 06/11/08</h2>
+<ul>
+   <li>Added flag to generate double-sided materials</li>
+   <li>Bug fixes from Dale Harper:
+     <ul><li>fixed last frame not being exported for cyclic sequences</li>
+     <li>fixed sequence 'Overide Duration' field being stored as an integer rather than a float</li>
+     <li>fixed reported number of ground frames in dump file</li>
+     <li>fixed reported ground frame Z translation in dump file</li>
+   </ul></li>
+   <li>Fixed "assertion failed when stripifying (1)" bug when exporting geometry with no material attached</li>
+   <li>Rebuilt with latest version of Milkshape SDK (v1.8.4). No functionality changes.</li>
+   <li>Updated to use latest version of DTSSDKPlus. New features include:
+     <ul><li>Multires (auto generate reduced-poly geometry on export)</li>
+     <li>Autobillboards</li>
+     <li>HTML dump file output</li>
+   </ul></li>
+   <li>Updated documentation</li>
+   <li>Added example file demonstrating billboards that rotate around a joint (rather than the origin)</li>
+</ul>
+
+<h2>Version 2.7.3 - 30/01/07</h2>
+<ul>
+   <li>Fixed seams appearing between groups in exported model (thanks Jon Orantes for the bug report and test case)</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.7.2 - 04/12/06</h2>
+<ul>
+   <li>Fixed a texture coordinate export bug introduced in the previous version.</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.7.1 - 29/11/06</h2>
+<ul>
+   <li>Fixed unwelding problem (seams appearing) in exported model and in milkshape after exporting (thanks Rex for helping track down the cause!).</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.7.0 - 09/11/06</h2>
+<ul>
+   <li>Fixed error when exporting after adding sequences or the bounds mesh to the shape via the exporter dialog. If you have seen seemingly random crashes with the exporter, this may have been the problem. (thanks Gordon Marsh for the bug report)</li>
+   <li>Added a progress bar</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.6.2 - 07/11/06</h2>
+<ul>
+   <li>Fixed error in shape hierarchy: rigid meshes are now added as children of the bone to which they are attached. (thanks Simon Duggan)</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.6.1 - 18/06/06</h2>
+<ul>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.6.0 - 10/06/06</h2>
+<ul>
+   <li>Updated to milkshape SDK 1.7.7</li>
+   <li>Added support for up to 3 bone weights per vertex</li>
+</ul>
+
+<h2>Version 2.5.0 - 24/12/05</h2>
+<ul>
+   <li>Added option to split DSQ export into multiple files</li>
+   <li>Added option to generate .cs file for DSQ export</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.4.0 - 17/12/05</h2>
+<ul>
+   <li>Added support back for detail maps</li>
+   <li>Added option to copy textures to export directory</li>
+   <li>Fixed bug that prevented creation of collision detail levels (thanks Simon Duggan)</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.3.0 - 03/10/05</h2>
+<ul>
+   <li>Fixed bug that prevented Z billboards from being exported correctly</li>
+   <li>Added billboards image to documentation</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.2.0 - 02/05/05</h2>
+<ul>
+   <li>Fixed bug where NeverEnvMap was not being cleared for materials using environment mapping</li>
+   <li>Made main export dialog box modal</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 2.1.0 - 01/05/05</h2>
+<ul>
+   <li>Fixed bug concerning mesh names ending in -1</li>
+</ul>
+
+<h2>Version 2.0.0 - 17/04/05</h2>
+<ul>
+   <li>Changed to new milkshape SDK (1.7.4)</li>
+   <li>Changed naming convention to store properties in comment string</li>
+   <li>Made visibility keyframes persistant</li>
+   <li>Removed sequences are now removed from the model</li>
+   <li>Added 'Output dump file' option to export dialog</li>
+   <li>Added 'Create Bounds Mesh' button to export dialog</li>
+   <li>Various small code fixes</li>
+   <li>Added online help</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.9.0 - 23/01/05</h2>
+<ul>
+   <li>Fixed LOSCol mesh name bug (thanks Ed Maurina)</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.8.0 - 16/11/04</h2>
+<ul>
+   <li>Removed auxilary map (bump, detail, reflectance) support.</li>
+   <li>Added fix from Matt Fairfax for normal calculation</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.7.0 - 27/10/04</h2>
+<ul>
+   <li>General code tidy up</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.6.0 - 23/09/04</h2>
+<ul>
+   <li>Added support for custom bounding box</li>
+   <li>Fixed broken IFL support</li>
+   <li>Fixed problem with unattached vertices being attached to the wrong bone</li>
+   <li>Various small code fixes</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.5.0 - 31/08/04</h2>
+<ul>
+   <li>Fixed 'fps' animation setting</li>
+   <li>Added initial DSQ support</li>
+</ul>
+
+<h2>Version 1.4.0 - 24/07/04</h2>
+<ul>
+   <li>Added player example to doc/examples folder</li>
+   <li>Added base skeleton to doc/examples folder</li>
+</ul>
+
+<h2>Version 1.3.0 - 21/07/04</h2>
+<ul>
+   <li>Fixed animation triggers not being exported</li>
+   <li>Added support for detail mapped materials</li>
+   <li>Added detail map example to doc/examples folder</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.2.0 - 30/06/04</h2>
+<ul>
+   <li>Added support for IFL materials</li>
+   <li>Added IFL example to doc/examples folder</li>
+   <li>Fixed unlinked mesh error when using custom config file</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.1.0 - 22/06/04</h2>
+<ul>
+   <li>Fixed scale setting not being applied by main dialog</li>
+   <li>Fixed dump file not working with custom config file</li>
+   <li>Added support for independent position/rotation keyframes</li>
+   <li>Updated documentation</li>
+</ul>
+
+<h2>Version 1.0.0 - 19/06/04</h2>
+<ul>
+   <li>First public release</li>
+</ul>
+
+</body>
+</html>

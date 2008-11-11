@@ -241,7 +241,8 @@ namespace DTS
       for (int i = 0; i < vCount; i++)
          verts[i] = objectOffset * (getVert(mesh, i) * mMsNode->getScale());
 
-      for (i = 0; i < mFaces.size();i++)
+      int numTriangles = mFaces.size();
+      for (i = 0; i < numTriangles; i++)
       {
          msTriangle *msFace = msMesh_GetTriangleAt(mesh, i);
          Primitive &tsFace = mFaces[i];
@@ -290,8 +291,8 @@ namespace DTS
 
                // add verts with order reversed to get the backface
                mIndices.push_back(addVertex(vert0,-norm0,tvert0,vertIndices[0]));
-               mIndices.push_back(addVertex(vert2,-norm2,tvert2,vertIndices[2]));
                mIndices.push_back(addVertex(vert1,-norm1,tvert1,vertIndices[1]));
+               mIndices.push_back(addVertex(vert2,-norm2,tvert2,vertIndices[2]));
             }
          }
       }

@@ -68,6 +68,7 @@ MilkshapeSequence::MilkshapeSequence(U32 seqIndex, char *name) : MilkshapeNode(n
    setUserPropFloat("frameRate",MsDefaults::frameRate);
    setUserPropBool("cyclic",MsDefaults::cyclic);
    setUserPropBool("blend",false);
+   setUserPropInt("blendReferenceFrame", 1);
    setUserPropFloat("priority", MsDefaults::priority);
    setUserPropFloat("overrideDuration", MsDefaults::overrideDuration);
    setUserPropBool("enableMorph",MsDefaults::enableMorph);

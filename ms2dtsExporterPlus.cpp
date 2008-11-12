@@ -27,7 +27,6 @@ static BOOL CALLBACK EditValueProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPara
 static void UpdateVisFrameList(HWND hDlg, int numFrames, int *frames, F32 *values);
 static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
 static BOOL CALLBACK EditMaterialProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
-static void UpdateTriggerList(HWND hDlg, int numTriggers, int *frames, int *states);
 static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam);
 static void UpdateMeshListBox(HWND hDlg);
 static void UpdateMaterialListBox(HWND hDlg);
@@ -57,6 +56,12 @@ struct ListViewColumns
    int   width;
 };
 
+//-----------------------------------------------------------------------------
+template<class T>
+static T Clamp(T val, T a, T b)
+{
+   return (val < a) ? a : ((val > b) ? b : val);
+}
 
 //-----------------------------------------------------------------------------
 /// Get a floating point value from a dialog box control
@@ -88,6 +93,7 @@ static bool IsChecked(HWND hDlg, int nIDDlgItem)
    return (::IsDlgButtonChecked(hDlg, nIDDlgItem) == BST_CHECKED);
 }
 
+//-----------------------------------------------------------------------------
 /// Functions to copy from a MilkshapeNode user property to a dialog control
 S32 CopyFromUserPropInt(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
 {
@@ -113,6 +119,7 @@ F32 CopyFromUserPropFloat(MilkshapeNode *node, const char *propName, HWND hDlg, 
    return value;
 }
 
+//-----------------------------------------------------------------------------
 /// Functions to copy from a dialog control to a MilkshapeNode user property
 S32 CopyToUserPropInt(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
 {
@@ -135,6 +142,7 @@ F32 CopyToUserPropFloat(MilkshapeNode *node, const char *propName, HWND hDlg, in
    return value;
 }
 
+//-----------------------------------------------------------------------------
 /// Initialise a key/value listview
 ///
 /// @param hDlg         Handle to the edit mesh dialog
@@ -166,7 +174,8 @@ static void InitListVewColumns(HWND hDlg, int ctrl, ListViewColumns *columns, in
 /// @param ctrl         List control ID
 /// @param keys         Vector of integer key values
 /// @param values       Vector of floating point values
-static void UpdateKeyValueList(HWND hDlg, int ctrl, const std::vector<S32>& keys, const std::vector<F32>& values)
+template<class T>
+static void UpdateKeyValueList(HWND hDlg, int ctrl, const std::vector<S32>& keys, const std::vector<T>& values)
 {
    LVITEM lvi;
    lvi.mask = LVIF_TEXT;
@@ -185,8 +194,30 @@ static void UpdateKeyValueList(HWND hDlg, int ctrl, const std::vector<S32>& keys
       sprintf(buffer, "%d", keys[i]);
       ListView_InsertItem(listwnd, &lvi);
 
-      sprintf(buffer, "%g", values[i]);
+      sprintf(buffer, "%g", (float)values[i]);
       ListView_SetItemText(listwnd, i, 1, buffer);
+   }
+}
+
+template<class T>
+static void SortKeyValueList(std::vector<S32>& keys, std::vector<T>& values)
+{
+   // do a simple bubble sort on the key/value arrays
+   for (int i = 0; i < keys.size(); i++)
+   {
+      for (int j = keys.size()-1; j > i; j--)
+      {
+         if (keys[j-1] > keys[j])
+         {
+            int tempKey = keys[j-1];
+            keys[j-1] = keys[j];
+            keys[j] = tempKey;
+
+            T tempValue = values[j-1];
+            values[j-1] = values[j];
+            values[j] = tempValue;
+         }
+      }
    }
 }
 
@@ -340,6 +371,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
             editMesh->getUserPropInt(DTS::avar("visFrame%d", i), visFrames[i]);
             editMesh->getUserPropFloat(DTS::avar("visAlpha%d", i), visValues[i]);
          }
+         SortKeyValueList(visFrames, visValues);
          UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
 
          // populate multires list box
@@ -359,6 +391,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
             editMesh->getUserPropInt(DTS::avar("autoDetailSize%d", i), multiresSizes[i]);
             editMesh->getUserPropFloat(DTS::avar("autoDetailPercent%d", i), multiresValues[i]);
          }
+         SortKeyValueList(multiresSizes, multiresValues);
          UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
 
          return TRUE;
@@ -422,10 +455,16 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                break;
 
             case IDC_MESH_VIS_ADD:
-               // add a new visibility keyframe to the end of the list
-               visFrames.push_back(2);
-               visValues.push_back(1.0f);
-               UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
+               // open the edit dialog to add a new visibility keyframe to the list
+               editValue[0] = 2;
+               editValue[1] = 1.0f;
+               if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"vis") == IDOK)
+               {
+                  visFrames.push_back(editValue[0]);
+                  visValues.push_back(Clamp(editValue[1], 0.0f, 1.0f));
+                  SortKeyValueList(visFrames, visValues);
+                  UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
+               }
                break;
 
             case IDC_MESH_VIS_EDIT:
@@ -439,7 +478,8 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"vis") == IDOK)
                   {
                      visFrames[sel] = (int)editValue[0];
-                     visValues[sel] = editValue[1];
+                     visValues[sel] = Clamp(editValue[1], 0.0f, 1.0f);
+                     SortKeyValueList(visFrames, visValues);
                      UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
                   }
                }
@@ -460,10 +500,16 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
             }
 
             case IDC_MESH_MULTIRES_ADD:
-               // add a new auto-detail to the end of the list
-               multiresSizes.push_back(2);
-               multiresValues.push_back(1.0f);
-               UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
+               // open the edit dialog to add a new auto-detail to the list
+               editValue[0] = 2;
+               editValue[1] = 1.0f;
+               if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"multires") == IDOK)
+               {
+                  multiresSizes.push_back(editValue[0]);
+                  multiresValues.push_back(Clamp(editValue[1], 0.0f, 1.0f));
+                  SortKeyValueList(multiresSizes, multiresValues);
+                  UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
+               }
                break;
 
             case IDC_MESH_MULTIRES_EDIT:
@@ -477,7 +523,8 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"multires") == IDOK)
                   {
                      multiresSizes[sel] = (int)editValue[0];
-                     multiresValues[sel] = editValue[1];
+                     multiresValues[sel] = Clamp(editValue[1], 0.0f, 1.0f);
+                     SortKeyValueList(multiresSizes, multiresValues);
                      UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
                   }
                }
@@ -696,36 +743,6 @@ static BOOL CALLBACK EditMaterialProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
    return FALSE;
 }
 
-/// Update the trigger list box
-///
-/// @param hDlg          Handle to the edit sequence dialog
-/// @param numTriggers   Number of triggers in the input array
-/// @param frames        Pointer to array of frame indices
-/// @param states        Pointer to array of trigger states
-static void UpdateTriggerList(HWND hDlg, int numTriggers, int *frames, int *states)
-{
-   LVITEM lvi;
-   lvi.mask = LVIF_TEXT;
-
-   // clear list
-   ListView_DeleteAllItems(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST));
-
-   for (int i = 0; i < numTriggers; i++)
-   {
-      lvi.iItem = i;
-      lvi.iSubItem = 0;
-      lvi.pszText = (char*)DTS::avar("%i", i);
-      ListView_InsertItem(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST), &lvi);
-
-      char buffer[MaxDlgTextLength+1];
-      sprintf(buffer, "%d", frames[i]);
-      ListView_SetItemText(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST), i, 1, buffer);
-
-      sprintf(buffer, "%d", states[i]);
-      ListView_SetItemText(::GetDlgItem(hDlg, IDC_SEQ_TRIGGER_LIST), i, 2, buffer);
-   }
-}
-
 //-----------------------------------------------------------------------------
 /// The dialog proc for the sequence editor
 ///
@@ -737,9 +754,8 @@ static void UpdateTriggerList(HWND hDlg, int numTriggers, int *frames, int *stat
 /// @return TRUE if the message was processed, FALSE otherwise
 static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
-   static int numTriggers = 0;
-   static int triggerFrames[MilkshapeSequence::MaxTriggers];
-   static int triggerStates[MilkshapeSequence::MaxTriggers];
+   static std::vector<S32> triggerFrames;
+   static std::vector<S32> triggerStates;
 
    switch (msg)
    {
@@ -779,20 +795,23 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
 
          // initialise the list of triggers
          ListViewColumns trigColumns[] = {
-             { "Trigger", 60 },
-             { "Frame",   50 },
+             { "Frame",   60 },
              { "State",   50 },
              { "",        0  },
          };
          InitListVewColumns(hDlg, IDC_SEQ_TRIGGER_LIST, trigColumns, LVCFMT_CENTER);
 
+         S32 numTriggers;
          editSeq->getUserPropInt("numTriggers", numTriggers);
-         for (int i = 0; i < numTriggers; i++)
+         triggerFrames.resize(numTriggers);
+         triggerStates.resize(numTriggers);
+         for (int i = 0; i < triggerFrames.size(); i++)
          {
             editSeq->getUserPropInt(DTS::avar("triggerFrame%i",i), triggerFrames[i]);
             editSeq->getUserPropInt(DTS::avar("triggerState%i",i), triggerStates[i]);
          }
-         UpdateTriggerList(hDlg, numTriggers, triggerFrames, triggerStates);
+         SortKeyValueList(triggerFrames, triggerStates);
+         UpdateKeyValueList(hDlg, IDC_SEQ_TRIGGER_LIST, triggerFrames, triggerStates);
 
          return TRUE;
       }
@@ -829,13 +848,21 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
             }
 
             case IDC_SEQ_TRIGGER_ADD:
-               // add a new trigger to the end of the list
-               if (numTriggers < MilkshapeSequence::MaxTriggers)
+               // open the edit dialog to add a new trigger to the list
+               editValue[0] = 2;
+               editValue[1] = 1;
+               if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"trigger") == IDOK)
                {
-                  triggerFrames[numTriggers] = 2;
-                  triggerStates[numTriggers] = 1;
-                  numTriggers++;
-                  UpdateTriggerList(hDlg, numTriggers, triggerFrames, triggerStates);
+                  triggerFrames.push_back(editValue[0]);
+                  triggerStates.push_back(Clamp((S32)editValue[1], -30, 30));
+                  if (triggerStates.back() == 0)
+                  {
+                     ::MessageBox(hDlg, "Invalid Trigger State",
+                        "Trigger states must be non-zero!", MB_APPLMODAL | MB_ICONERROR | MB_OK);
+                     triggerStates.back() = 1;
+                  }
+                  SortKeyValueList(triggerFrames, triggerStates);
+                  UpdateKeyValueList(hDlg, IDC_SEQ_TRIGGER_LIST, triggerFrames, triggerStates);
                }
                break;
 
@@ -850,14 +877,15 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"trigger") == IDOK)
                   {
                      triggerFrames[sel] = editValue[0];
-                     triggerStates[sel] = editValue[1];
+                     triggerStates[sel] = Clamp((S32)editValue[1], -30, 30);
                      if (triggerStates[sel] == 0)
                      {
                         ::MessageBox(hDlg, "Invalid Trigger State",
                            "Trigger states must be non-zero!", MB_APPLMODAL | MB_ICONERROR | MB_OK);
                         triggerStates[sel] = 1;
                      }
-                     UpdateTriggerList(hDlg, numTriggers, triggerFrames, triggerStates);
+                     SortKeyValueList(triggerFrames, triggerStates);
+                     UpdateKeyValueList(hDlg, IDC_SEQ_TRIGGER_LIST, triggerFrames, triggerStates);
                   }
                }
                break;
@@ -867,13 +895,12 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
             {
                // remove the selected trigger
                int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_SEQ_TRIGGER_LIST));
-               for (int k = sel; k < (numTriggers-1); k++)
+               if (sel >= 0)
                {
-                  triggerFrames[k] = triggerFrames[k+1];
-                  triggerStates[k] = triggerStates[k+1];
+                  triggerFrames.erase(triggerFrames.begin() + sel);
+                  triggerStates.erase(triggerStates.begin() + sel);
+                  UpdateKeyValueList(hDlg, IDC_SEQ_TRIGGER_LIST, triggerFrames, triggerStates);
                }
-               numTriggers--;
-               UpdateTriggerList(hDlg, numTriggers, triggerFrames, triggerStates);
                break;
             }
 
@@ -914,8 +941,8 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                editSeq->clearTriggers();
 
                // set triggers
-               editSeq->setUserPropInt("numTriggers", numTriggers);
-               for (int i = 0; i < numTriggers; i++)
+               editSeq->setUserPropInt("numTriggers", triggerFrames.size());
+               for (int i = 0; i < triggerFrames.size(); i++)
                {
                   editSeq->setUserPropInt(DTS::avar("triggerFrame%i",i), triggerFrames[i]);
                   editSeq->setUserPropInt(DTS::avar("triggerState%i",i), triggerStates[i]);

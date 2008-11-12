@@ -1845,7 +1845,6 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
    HWND hProgressDlg = ::CreateDialog(hInstance, MAKEINTRESOURCE(IDD_PROGRESS),
                                        ::GetActiveWindow(), ProgressDlgProc);
    ::ShowWindow(hProgressDlg, SW_SHOW);
-   DTS::AppConfig::SetProgressCallback(updateProgress, (void*)hProgressDlg);
 
    //--------------------------------------------------------------------------
    // start out with milkshape default config
@@ -1854,6 +1853,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
 
    DTS::MsConfig defConfig;
    DTS::AppConfig::SetConfig(&defConfig);
+   DTS::AppConfig::SetProgressCallback(updateProgress, (void*)hProgressDlg);
 
    // set up the dump file
    if (mGenDump && !DTS::AppConfig::SetDumpFile(outputFilename, NULL))

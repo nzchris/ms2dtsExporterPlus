@@ -142,6 +142,17 @@ SOURCE=..\dtsSDKPlus\appTime.cpp
 # Begin Source File
 
 SOURCE=..\dtsSDKPlus\decomp\Decompose.cpp
+
+!IF  "$(CFG)" == "dtsSDKPlus - Win32 Release"
+
+# ADD CPP /Od
+
+!ELSEIF  "$(CFG)" == "dtsSDKPlus - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "dtsSDKPlus - Win32 Hybrid"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

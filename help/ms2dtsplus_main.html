@@ -26,7 +26,7 @@
    <dt>Remove</dt><dd>Removes the selected sequence. Removed sequences will be removed from the Milkshape model unless you press Cancel.</dd>
    <dt>Scale</dt><dd>Global scale factor applied to the model when it is exported.</dd>
    <dt>Use .cfg File</dt><dd>If checked, the exporter will search for a config file with the same name as the exported shape. eg shape.cfg for the exported shape.dts. If unchecked, the default configuration will be used. See <a href="ms2dtsplus_addinfo.html#ADDINFO_DEFCFG">Default Configuration</a>.</dd>
-   <dt>Output Dump File</dt><dd>If checked, a file called dump.dmp will be created in the same directory as the exported shape. See <a href="ms2dtsplus_addinfo.html#ADDINFO_DUMP">Dump Files</a></dd>
+   <dt>Output Dump File</dt><dd>If checked, an HTML file called dump.html will be created in the same directory as the exported shape. See <a href="ms2dtsplus_addinfo.html#ADDINFO_DUMP">Dump Files</a></dd>
    <dt>Export Animations</dt><dd>If checked, animation information will be written to the DTS shape. This flag is ignored when exporting DSQ files.</dd>
    <dt>Copy Textures</dt><dd>If checked, all textures used in the exported shape will be copied to the export directory. This flag is ignored when exporting DSQ files.</dd>
    <dt>Generate .cs file</dt><dd>If checked, a TorqueScript .cs file will be created that can be used to load the shape (with DSQ animations) in TGE. This flag is ignored when exporting DTS files.</dd>
@@ -34,7 +34,7 @@
    <dt>Apply</dt><dd>Apply changes to the Milkshape model. The exporter dialog box will remain open.</dd>
    <dt>Cancel</dt><dd>Close the exporter dialog box without applying any changes.</dd>
    <dt>Help</dt><dd>Display this page.</dd>
-   <dt>Create Bounds Mesh</dt><dd>Creates the bounding box mesh and Root bone if they do not already exist.  The bounding box is a cube 1 Milkshape unit larger than the extents of the current model. The changes will be applied to the model unless you press Cancel. See <a href="ms2dtsplus_addinfo.html#ADDINFO_STRUCTURE">Shape Structure</a>.</dd>
+   <dt>Create Bounds Mesh</dt><dd>Creates the bounding box mesh and Root bone if they do not already exist. The bounding box mesh can be animated to generate ground transforms for walking and running animations. The bounding box is a cube equal to the extents of the current model. The changes will be applied to the model unless you press Cancel. See <a href="ms2dtsplus_addinfo.html#ADDINFO_STRUCTURE">Shape Structure</a>.</dd>
    <dt>Export DTS</dt><dd>Export the current shape to a dts file.</dd>
    <dt>Export DSQ</dt><dd>Export all animation sequences to a dsq file. See <a href="ms2dtsplus_animation.html#ANIM_DSQ">DSQ Export</a>.</dd>
 </dl>

@@ -105,5 +105,15 @@
 
 <p>Like regular collision meshes, LOS meshes should use as few polygons as possible, and <b>must</b> be convex.</p>
 
+<h2 id=MESHES_AUTODETAIL>Multires (auto-detail meshes)</h2>
+
+<p>The exporter may be configured to automatically generate lower-detail meshes as part of the export process. The two fields of interest for each multires level is the LOD and the Percentage. The LOD field determines the size at which the multires-mesh will be displayed (just like normal geometry), and the Percentage determines the desired reduction in polygons from the original mesh. For example, adding a multires of LOD=32 and Percentage=0.5 would generate a mesh with half the number of polygons that is displayed when the shape is 32 pixels or larger on screen.</p>
+
+<h2 id=MESHES_AUTO_BILLBOARD>Auto Billboards</h2>
+
+<p>The exporer can optionally generate a so called 'AutoBillboard' detail level. This detail level is special in that it tells the Torque engine to render billboard snapshots of the shape instead of the actual 3D geometry. These 'snapshots' are low-resolution renderings of the shape from various angles. As the camera moves around the shape, the Torque engine displays the appropriate snapshot. Auto Billboards are often used as the smallest detail level since they are very efficient to render (only 2 triangles).</p>
+
+<p>Note that auto-billboard detail levels are global, ie. if an auto-billboard is defined, snapshots will be taken for <b>all</b> of the meshes in the shape, not just the one used to define the auto-billboard.</p>
+
 </body>
 </html>

@@ -17,10 +17,10 @@
 <pre>
 ROOT
 |
-|-__mainTree
+|-start01
 |   |
 |   |-LOD Markers
-|   |-__meshes
+|   |-base01
 |        |
 |        |-skeleton (including Root bone)
 |          |
@@ -32,7 +32,7 @@ ROOT
 </pre>
 
 <ul>
-   <li>The '__mainTree' and '__meshes' nodes are dummy nodes created automatically by the exporter. They are part of the default NeverExport list, so are not present in the exported shape. If you use your own configuration file, you should add these two nodes to the NeverExport list.</li>
+   <li>The 'start01' and 'base01' nodes are dummy nodes created automatically by the exporter. They are part of the default NeverExport list, so are not present in the exported shape. If you use your own configuration file, you should add these two nodes to the NeverExport list.</li>
    <li>LOD markers are created automatically for any detail levels that have been defined in the model. They are written into the DTS shape, and have the form:
    <ul>
       <li>DetailN for regular mesh details (size N)
@@ -80,8 +80,8 @@ ROOT
 +Dump::ShapeHierarchy
 
 NeverExport
-__mainTree
-__meshes
+start01
+base01
 </pre>
 
 <p>A '+' sets the setting to true, '-' sets it to false, and '=' is used to set the value of a setting. Nodes in the 'NeverExport' list are not written to the DTS file. This list is mostly used for DSQ export to exclude non-animating nodes. Names in the NeverExport list can include wildcards (*). eg 'leg*' matches both 'leg1' and 'leg2'.</p>
@@ -112,7 +112,7 @@ __meshes
 
 <h2 id=ADDINFO_DUMP>Dump Files</h2>
 
-<p>When the shape is exported, a file called dump.dmp may be created in the same directory as the dts file. This text file contains details of the export process, as well as the final structure of the exported shape. It may be useful to track down problems with the shape or the export process.</p>
+<p>When the shape is exported, an HTML file called dump.html may be created in the same directory as the dts file. This file contains details of the export process, as well as the final structure of the exported shape, and may be opened in any text editor or web browser. It may be useful to track down problems with the shape or the export process.</p>
 
 </body>
 </html>

@@ -9,6 +9,8 @@
 //
 #include "afxres.h"
 
+#include "version.h"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -28,8 +30,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,8,0,0
- PRODUCTVERSION 2,8,0,0
+ FILEVERSION VC_BASE_VERSION_NUMBER
+ PRODUCTVERSION VC_BASE_VERSION_NUMBER
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L

@@ -5,7 +5,7 @@
 #include "MilkshapeNode.h"
 
 
-#define MS_BONES_PER_VERTEX_EX   3 // SDK 1.7.7 supports up to 3 weights per vertex
+#define MS_BONES_PER_VERTEX_EX   4 // SDK 1.7.7 supports up to 4 weights per vertex
 
 
 namespace MsDefaults

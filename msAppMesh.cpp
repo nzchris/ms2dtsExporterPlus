@@ -319,7 +319,7 @@ namespace DTS
          return;
 
       // need to generate an array of bones that animate this mesh
-      // Milkshape supports up to 3 bone weights per vertex - all other bones
+      // Milkshape supports up to 4 bone weights per vertex - all other bones
       // are set to weight 0
       msModel *model = mMsNode->getModel();
 
@@ -357,28 +357,41 @@ namespace DTS
          bool attached = false;
 
          // get the bone indices/weights of this vertex - they are stored a bit
-         // strangely to keep the milkshape file format backwards compatible.
-         // the first bone is stored in a Vertex, the first weight is stored
-         // in a VertexEx
+         // strangely to keep the milkshape file format backwards compatible:
+         // bone[0] = msVertex.nBoneIndex, weight[0] = msVertexEx.nBoneWeights[0]
+         // bone[1] = msVertexEx.nBoneIndex[0], weight[1] = msVertexEx.nBoneWeights[1]
+         // bone[2] = msVertexEx.nBoneIndex[1], weight[2] = msVertexEx.nBoneWeights[2]
+         // bone[3] = msVertexEx.nBoneIndex[2], weight[3] = 1 - (sum_of_other_weights)
          for (int k = 0; k < MS_BONES_PER_VERTEX_EX; k++)
          {
             msVertexEx *vtx = msMesh_GetVertexExAt(mMsNode->getMsMesh(), j);
-            weights[k] = (F32)msVertexEx_GetBoneWeights(vtx, k) / 100.f;
+
+            // get the bone index
             if (k == 0)
             {
                msVertex *v = msMesh_GetVertexAt(mMsNode->getMsMesh(), j);
-               indices[0] = msVertex_GetBoneIndex(v);
-
-               // set the weight to 1 if the VertexEx is not used
-               if ((indices[0] >= 0) && (weights[0] == 0.0f))
-                  weights[0] = 1.0f;
+               indices[k] = msVertex_GetBoneIndex(v);
             }
             else
             {
                indices[k] = msVertexEx_GetBoneIndices(vtx, k - 1);
             }
+
+            // get the bone weight
             if (indices[k] >= 0)
+            {
                attached = true;
+               if (k != (MS_BONES_PER_VERTEX_EX-1))
+               {
+                  weights[k] = (F32)msVertexEx_GetBoneWeights(vtx, k) / 100.f;
+               }
+               else
+               {
+                  weights[k] = 1.0f - (weights[0] + weights[1] + weights[2]);
+               }
+            }
+            else
+               weights[k] = 0.0f;
          }
 
          // if the vertex is not attached to any bones, attach it to the root bone

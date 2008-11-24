@@ -27,7 +27,7 @@ MsConfig::MsConfig()
    mSameNormTOL = 0.005f;
    mSameTVertTOL = 0.00005f;
    mWeightThreshhold = 0.001f;
-   mWeightsPerVertex = 3;
+   mWeightsPerVertex = 4;
    mCyclicSequencePadding = 0;
    mAppFramesPerSec = 30.0f;
    mDumpConfig = 0xFFFFFFFF;

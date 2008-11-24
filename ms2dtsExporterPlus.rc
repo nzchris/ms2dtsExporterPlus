@@ -48,7 +48,7 @@ BEGIN
         BEGIN
             VALUE "Author", "Chris Robertson\0"
             VALUE "FileDescription", "Milkshape DTS Exporter\0"
-            VALUE "FileVersion", "2.8.0\0"
+            VALUE "FileVersion", BASE_VERSION_NUMBER_STR
             VALUE "LegalCopyright", "Copyright © 2008\0"
             VALUE "OriginalFilename", "ms2dtsExporterPlus.dll\0"
             VALUE "ProductName", "ms2dtsExporterPlus\0"
@@ -174,8 +174,7 @@ BEGIN
                     ES_NUMBER
     CONTROL         "Cyclic",IDC_SEQ_CYCLIC,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,13,75,35,10
-    EDITTEXT        IDC_SEQ_FRAMERATE,157,18,40,14,ES_RIGHT | ES_AUTOHSCROLL | 
-                    ES_NUMBER
+    EDITTEXT        IDC_SEQ_FRAMERATE,157,18,40,14,ES_RIGHT | ES_AUTOHSCROLL
     EDITTEXT        IDC_SEQ_DURATION,157,36,40,14,ES_RIGHT | ES_AUTOHSCROLL
     EDITTEXT        IDC_SEQ_PRIORITY,157,54,40,14,ES_RIGHT | ES_AUTOHSCROLL
     CONTROL         "Ignore Ground Transform",IDC_SEQ_IGNOREGND,"Button",
@@ -217,8 +216,7 @@ BEGIN
     GROUPBOX        "Export Settings",IDC_STATIC,210,7,85,85
     CONTROL         "Auto-generate ground transforms",IDC_SEQ_GROUND_AUTO,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,146,119,119,10
-    EDITTEXT        IDC_SEQ_GROUND_X,236,149,51,14,ES_RIGHT | ES_AUTOHSCROLL | 
-                    ES_NUMBER
+    EDITTEXT        IDC_SEQ_GROUND_X,236,149,51,14,ES_RIGHT | ES_AUTOHSCROLL
     EDITTEXT        IDC_SEQ_GROUND_Y,236,167,51,14,ES_RIGHT | ES_AUTOHSCROLL
     EDITTEXT        IDC_SEQ_GROUND_Z,236,185,51,14,ES_RIGHT | ES_AUTOHSCROLL
     CONTROL         "Ground X Speed:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | 
@@ -226,7 +224,7 @@ BEGIN
     LTEXT           "Ground Y Speed:",IDC_STATIC,146,171,56,8
     LTEXT           "Ground Z Speed:",IDC_STATIC,146,189,56,8
     EDITTEXT        IDC_SEQ_GROUND_FPS,236,131,51,14,ES_RIGHT | 
-                    ES_AUTOHSCROLL | ES_NUMBER
+                    ES_AUTOHSCROLL
     LTEXT           "Ground Transform FPS:",IDC_STATIC,146,134,75,8
 END
 
@@ -271,15 +269,15 @@ BEGIN
     CONTROL         "Enable AutoBillboard",IDC_MESH_AUTOBB_ENABLE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,120,132,81,10
     EDITTEXT        IDC_MESH_AUTOBB_EQU_STEPS,168,178,32,14,ES_RIGHT | 
-                    ES_AUTOHSCROLL
+                    ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MESH_AUTOBB_POLAR_STEPS,246,162,32,14,ES_RIGHT | 
-                    ES_AUTOHSCROLL
+                    ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MESH_AUTOBB_INDEX,246,146,32,14,ES_RIGHT | 
-                    ES_AUTOHSCROLL
+                    ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MESH_AUTOBB_POLAR_ANGLE,246,194,32,14,ES_RIGHT | 
                     ES_AUTOHSCROLL
     EDITTEXT        IDC_MESH_AUTOBB_DIM,168,162,32,14,ES_RIGHT | 
-                    ES_AUTOHSCROLL
+                    ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Include Poles",IDC_MESH_AUTOBB_INCLUDE_POLES,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,120,197,59,10
     LTEXT           "Equator Steps:",IDC_STATIC,120,181,48,8

@@ -1,4 +1,4 @@
-Last updated: 25/11/08
+Last updated: 23/07/08
 
 Features:
 - Triangle stripper

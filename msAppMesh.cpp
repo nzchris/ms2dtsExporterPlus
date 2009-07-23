@@ -394,6 +394,12 @@ namespace DTS
                weights[k] = 0.0f;
          }
 
+         // Force verts that are attached to a single bone to have 100% weight
+         if (attached && (indices[1] == -1) && (weights[0] == 0.0f))
+         {
+            weights[0] = 1.0f;
+         }
+
          // if the vertex is not attached to any bones, attach it to the root bone
          if (!attached)
          {

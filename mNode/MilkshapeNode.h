@@ -39,7 +39,7 @@ namespace MsDefaults
 /// @return True if the second string occurs at the start of the first string
 inline bool strStartsWith(const char *s1, const char *s2)
 {
-   return (strnicmp(s1, s2, strlen(s2)) == 0);
+   return (_strnicmp(s1, s2, strlen(s2)) == 0);
 }
 
 /// Remove a material from the milkshape model. This is a function that

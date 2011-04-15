@@ -53,7 +53,7 @@ void msMaterial_Destroy(msModel *pModel, msMaterial *pMaterial)
 MilkshapeNode::~MilkshapeNode()
 {
    // delete children
-   for (int i = 0; i < mChildren.size(); i++)
+   for (int i = 0; i < (int)mChildren.size(); i++)
       delete mChildren[i];
    mChildren.clear();
 }
@@ -67,7 +67,7 @@ void MilkshapeNode::addChildNode(MilkshapeNode *child)
 
 MilkshapeNode *MilkshapeNode::getChildNode(S32 idx) const
 {
-   assert((idx >= 0 && idx < mChildren.size()) && "Index out of range");
+   assert((idx >= 0 && idx < (int)mChildren.size()) && "Index out of range");
    return mChildren[idx];
 }
 
@@ -124,16 +124,16 @@ void MilkshapeNode::readPropertyString(char *buff)
    // float properties
    int numProperties = atoi(strtok(buff, delims));
    for (int i = 0; i < numProperties; i++)
-      mFloatMap[strtok(NULL, delims)] = atof(strtok(NULL, delims));
+      mFloatMap[strtok(NULL, delims)] = (F32)atof(strtok(NULL, delims));
 
    // integer properties
    numProperties = atoi(strtok(NULL, delims));
-   for (i = 0; i < numProperties; i++)
+   for (int i = 0; i < numProperties; i++)
       mIntMap[strtok(NULL, delims)] = atoi(strtok(NULL, delims));
 
    // boolean properties
    numProperties = atoi(strtok(NULL, delims));
-   for (i = 0; i < numProperties; i++)
+   for (int i = 0; i < numProperties; i++)
       mBoolMap[strtok(NULL, delims)] = (*strtok(NULL, delims) == '1');
 }
 

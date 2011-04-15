@@ -55,7 +55,7 @@ namespace DTS
    Matrix<4,4,F32> MsAppNode::getNodeTransform(const AppTime & time)
    {
       // convert from seconds to frames (round to nearest)
-      S32 frame = (time.getF32() * AppConfig::AppFramesPerSec() + 0.5f);
+      S32 frame = (S32)(time.getF32() * AppConfig::AppFramesPerSec() + 0.5f);
       return mMsNode->getNodeTransform(frame);
    }
 

@@ -184,7 +184,7 @@ static void UpdateKeyValueList(HWND hDlg, int ctrl, const std::vector<S32>& keys
    HWND listwnd = ::GetDlgItem(hDlg, ctrl);
    ListView_DeleteAllItems(listwnd);
 
-   for (int i = 0; i < keys.size(); i++)
+   for (int i = 0; i < (int)keys.size(); i++)
    {
       lvi.iItem = i;
       lvi.iSubItem = 0;
@@ -203,9 +203,9 @@ template<class T>
 static void SortKeyValueList(std::vector<S32>& keys, std::vector<T>& values)
 {
    // do a simple bubble sort on the key/value arrays
-   for (int i = 0; i < keys.size(); i++)
+   for (int i = 0; i < (int)keys.size(); i++)
    {
-      for (int j = keys.size()-1; j > i; j--)
+      for (int j = (int)keys.size()-1; j > i; j--)
       {
          if (keys[j-1] > keys[j])
          {
@@ -386,7 +386,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
          editMesh->getUserPropInt("numAutoDetails", numAutoDetails);
          multiresSizes.resize(numAutoDetails);
          multiresValues.resize(numAutoDetails);
-         for (i = 0; i < numAutoDetails; i++)
+         for (int i = 0; i < numAutoDetails; i++)
          {
             editMesh->getUserPropInt(DTS::avar("autoDetailSize%d", i), multiresSizes[i]);
             editMesh->getUserPropFloat(DTS::avar("autoDetailPercent%d", i), multiresValues[i]);
@@ -460,7 +460,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                editValue[1] = 1.0f;
                if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"vis") == IDOK)
                {
-                  visFrames.push_back(editValue[0]);
+                  visFrames.push_back((S32)editValue[0]);
                   visValues.push_back(Clamp(editValue[1], 0.0f, 1.0f));
                   SortKeyValueList(visFrames, visValues);
                   UpdateKeyValueList(hDlg, IDC_MESH_VIS_LIST, visFrames, visValues);
@@ -473,7 +473,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_MESH_VIS_LIST));
                if (sel >= 0)
                {
-                  editValue[0] = visFrames[sel];
+                  editValue[0] = (F32)visFrames[sel];
                   editValue[1] = visValues[sel];
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"vis") == IDOK)
                   {
@@ -505,7 +505,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                editValue[1] = 1.0f;
                if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"multires") == IDOK)
                {
-                  multiresSizes.push_back(editValue[0]);
+                  multiresSizes.push_back((S32)editValue[0]);
                   multiresValues.push_back(Clamp(editValue[1], 0.0f, 1.0f));
                   SortKeyValueList(multiresSizes, multiresValues);
                   UpdateKeyValueList(hDlg, IDC_MESH_MULTIRES_LIST, multiresSizes, multiresValues);
@@ -518,7 +518,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_MESH_MULTIRES_LIST));
                if (sel >= 0)
                {
-                  editValue[0] = multiresSizes[sel];
+                  editValue[0] = (F32)multiresSizes[sel];
                   editValue[1] = multiresValues[sel];
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"multires") == IDOK)
                   {
@@ -599,7 +599,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                // update visibility keyframes
                editMesh->clearVisFrames();
                editMesh->setUserPropInt("numVisFrames", visFrames.size());
-               for (int i = 0; i < visFrames.size(); i++)
+               for (int i = 0; i < (int)visFrames.size(); i++)
                {
                   editMesh->setUserPropInt(DTS::avar("visFrame%d", i), visFrames[i]);
                   editMesh->setUserPropFloat(DTS::avar("visAlpha%d", i), visValues[i]);
@@ -608,7 +608,7 @@ static BOOL CALLBACK EditMeshProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam
                // update auto-details
                editMesh->clearAutoDetails();
                editMesh->setUserPropInt("numAutoDetails", multiresSizes.size());
-               for (i = 0; i < multiresSizes.size(); i++)
+               for (int i = 0; i < (int)multiresSizes.size(); i++)
                {
                   editMesh->setUserPropInt(DTS::avar("autoDetailSize%d", i), multiresSizes[i]);
                   editMesh->setUserPropFloat(DTS::avar("autoDetailPercent%d", i), multiresValues[i]);
@@ -644,7 +644,7 @@ static BOOL CALLBACK EditMaterialProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
       {
          // populate detail, bump and reflectance map combo boxes with the
          // names of the (non-special) milkshape materials
-         for (int i = 0; i < theExporter->mMaterials.size(); i++)
+         for (int i = 0; i < (int)theExporter->mMaterials.size(); i++)
          {
             LPARAM name = (LPARAM)theExporter->mMaterials[i]->getName();
             ::SendDlgItemMessage(hDlg, IDC_MAT_DETAILMAP, CB_ADDSTRING, 0, name);
@@ -805,7 +805,7 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
          editSeq->getUserPropInt("numTriggers", numTriggers);
          triggerFrames.resize(numTriggers);
          triggerStates.resize(numTriggers);
-         for (int i = 0; i < triggerFrames.size(); i++)
+         for (int i = 0; i < (int)triggerFrames.size(); i++)
          {
             editSeq->getUserPropInt(DTS::avar("triggerFrame%i",i), triggerFrames[i]);
             editSeq->getUserPropInt(DTS::avar("triggerState%i",i), triggerStates[i]);
@@ -853,7 +853,7 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                editValue[1] = 1;
                if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"trigger") == IDOK)
                {
-                  triggerFrames.push_back(editValue[0]);
+                  triggerFrames.push_back((S32)editValue[0]);
                   triggerStates.push_back(Clamp((S32)editValue[1], -30, 30));
                   if (triggerStates.back() == 0)
                   {
@@ -872,11 +872,11 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
                int sel = ListView_GetSelectionMark(::GetDlgItem(hDlg,IDC_SEQ_TRIGGER_LIST));
                if (sel >= 0)
                {
-                  editValue[0] = triggerFrames[sel];
-                  editValue[1] = triggerStates[sel];
+                  editValue[0] = (F32)triggerFrames[sel];
+                  editValue[1] = (F32)triggerStates[sel];
                   if (::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_VALUE_EDIT), hDlg, EditValueProc, (LPARAM)"trigger") == IDOK)
                   {
-                     triggerFrames[sel] = editValue[0];
+                     triggerFrames[sel] = (S32)editValue[0];
                      triggerStates[sel] = Clamp((S32)editValue[1], -30, 30);
                      if (triggerStates[sel] == 0)
                      {
@@ -942,7 +942,7 @@ static BOOL CALLBACK EditSequenceProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
 
                // set triggers
                editSeq->setUserPropInt("numTriggers", triggerFrames.size());
-               for (int i = 0; i < triggerFrames.size(); i++)
+               for (int i = 0; i < (int)triggerFrames.size(); i++)
                {
                   editSeq->setUserPropInt(DTS::avar("triggerFrame%i",i), triggerFrames[i]);
                   editSeq->setUserPropInt(DTS::avar("triggerState%i",i), triggerStates[i]);
@@ -974,7 +974,7 @@ static void UpdateMeshListBox(HWND hDlg)
    HWND listwnd = ::GetDlgItem(hDlg, IDC_MESH_LIST);
    ListView_DeleteAllItems(listwnd);
 
-   for (int i = 0; i < theExporter->mMeshes.size(); i++)
+   for (int i = 0; i < (int)theExporter->mMeshes.size(); i++)
    {
       // sequence list items
       MilkshapeMesh *mesh = theExporter->mMeshes[i];
@@ -1005,7 +1005,7 @@ static void UpdateMaterialListBox(HWND hDlg)
    ListView_DeleteAllItems(listwnd);
 
    int count = 0;
-   for (int i = 0; i < theExporter->mMaterials.size(); i++)
+   for (int i = 0; i < (int)theExporter->mMaterials.size(); i++)
    {
       // sequence list items
       MilkshapeMaterial *mat = theExporter->mMaterials[i];
@@ -1034,7 +1034,7 @@ static void UpdateSequenceListBox(HWND hDlg)
    HWND listwnd = ::GetDlgItem(hDlg, IDC_SEQUENCE_LIST);
    ListView_DeleteAllItems(listwnd);
 
-   for (int i = 0; i < theExporter->mSequences.size(); i++)
+   for (int i = 0; i < (int)theExporter->mSequences.size(); i++)
    {
       // sequence list items
       MilkshapeSequence *seq = theExporter->mSequences[i];
@@ -1333,7 +1333,7 @@ void Ms2dtsExporterPlus::readMeshList()
    }
 
    // read meshes
-   for (i = 0; i < msModel_GetMeshCount(mModel); i++)
+   for (int i = 0; i < msModel_GetMeshCount(mModel); i++)
    {
       // create mesh
       MilkshapeMesh *meshDat = new MilkshapeMesh(i);
@@ -1375,7 +1375,7 @@ void Ms2dtsExporterPlus::readMeshList()
    }
 
    // setup auxilary maps for each material
-   for (i = 0; i < mMaterials.size(); i++)
+   for (int i = 0; i < (int)mMaterials.size(); i++)
    {
       int detail=-1, bump=-1, reflect=-1;
 
@@ -1383,17 +1383,17 @@ void Ms2dtsExporterPlus::readMeshList()
       mMaterials[i]->getUserPropInt("bump", bump);
       mMaterials[i]->getUserPropInt("reflectance", reflect);
 
-      if ((detail >= 0) && (detail < mMaterials.size()))
+      if ((detail >= 0) && (detail < (int)mMaterials.size()))
       {
          mMaterials[i]->mDetail = mMaterials[detail];
          mMaterials[detail]->mRefCount++;
       }
-      if ((bump >= 0) && (bump < mMaterials.size()))
+      if ((bump >= 0) && (bump < (int)mMaterials.size()))
       {
          mMaterials[i]->mBump = mMaterials[bump];
          mMaterials[bump]->mRefCount++;
       }
-      if ((reflect >= 0) && (reflect < mMaterials.size()))
+      if ((reflect >= 0) && (reflect < (int)mMaterials.size()))
       {
          mMaterials[i]->mReflectance = mMaterials[reflect];
          mMaterials[reflect]->mRefCount++;
@@ -1407,7 +1407,7 @@ S32 Ms2dtsExporterPlus::setAuxMaterial(MilkshapeMaterial **mat, const char *name
 	S32 index = -1;
 
 	// find the material that matches the given name
-	for (int i = 0; i < mMaterials.size(); i++)
+	for (int i = 0; i < (int)mMaterials.size(); i++)
 	{
 		if (strcmp(mMaterials[i]->getName(), name) == 0)
 		{
@@ -1475,7 +1475,7 @@ void Ms2dtsExporterPlus::applyChanges()
 
    //--------------------------------------------------------------------------
    // update meshes
-   for (int i = 0; i < mMeshes.size(); i++)
+   for (int i = 0; i < (int)mMeshes.size(); i++)
    {
       MilkshapeMesh *mesh = mMeshes[i];
 
@@ -1491,7 +1491,7 @@ void Ms2dtsExporterPlus::applyChanges()
 
    //--------------------------------------------------------------------------
    // update materials
-   for (i = 0; i < mMaterials.size(); i++)
+   for (int i = 0; i < (int)mMaterials.size(); i++)
    {
       MilkshapeMaterial *mat = mMaterials[i];
 
@@ -1510,7 +1510,7 @@ void Ms2dtsExporterPlus::applyChanges()
 
    //--------------------------------------------------------------------------
    // update sequence special materials
-   for (i = 0; i < mSequences.size(); i++)
+   for (int i = 0; i < (int)mSequences.size(); i++)
    {
       MilkshapeSequence *seq = mSequences[i];
 
@@ -1530,19 +1530,19 @@ void Ms2dtsExporterPlus::applyChanges()
    }
 
    // delete removed sequences
-   for (i = 0; i < mDeletedSequences.size(); i++)
+   for (int i = 0; i < (int)mDeletedSequences.size(); i++)
    {
       MilkshapeSequence *rem = mDeletedSequences[i];
       if (rem->getMsMaterial())
       {
          // update material indices
-         for (int k = 0; k < mSequences.size(); k++)
+         for (int k = 0; k < (int)mSequences.size(); k++)
          {
             MilkshapeSequence *seq = mSequences[k];
             if (seq->getMatIndex() > rem->getMatIndex())
                seq->setMatIndex(seq->getMatIndex() - 1);
          }
-         for (k = i+1; k < mDeletedSequences.size(); k++)
+         for (int k = i+1; k < (int)mDeletedSequences.size(); k++)
          {
             MilkshapeSequence *seq = mDeletedSequences[k];
             if (seq->getMatIndex() > rem->getMatIndex())
@@ -1595,7 +1595,7 @@ void Ms2dtsExporterPlus::createBounds()
    // determine bounds size by finding min/max X, Y, Z
    DTS::Point3D pMin(99999999.f, 99999999.f, 99999999.f);
    DTS::Point3D pMax(-99999999.f, -99999999.f, -99999999.f);
-   for (i = 0; i < numMeshes; i++)
+   for (int i = 0; i < numMeshes; i++)
    {
       msMesh *mesh = msModel_GetMeshAt(mModel, i);
 
@@ -1645,7 +1645,7 @@ void Ms2dtsExporterPlus::createBounds()
    vec[6][0] = -pMax.x(); vec[6][1] = pMax.z(); vec[6][2] = pMax.y();
    vec[7][0] = -pMin.x(); vec[7][1] = pMax.z(); vec[7][2] = pMax.y();
 
-   for (i = 0; i < 8; i++)
+   for (int i = 0; i < 8; i++)
    {
       msMesh_AddVertex(boundsMesh);
       msVertex* vtx = msMesh_GetVertexAt(boundsMesh, i);
@@ -1663,7 +1663,7 @@ void Ms2dtsExporterPlus::createBounds()
                         3, 2, 6,    3, 6, 7, \
                         0, 4, 5,    0, 5, 1     };
 
-   for (i = 0; i < 12; i++)
+   for (int i = 0; i < 12; i++)
    {
       msMesh_AddTriangle(boundsMesh);
       msTriangle* face = msMesh_GetTriangleAt(boundsMesh, i);
@@ -1702,7 +1702,7 @@ void Ms2dtsExporterPlus::generateCsFile(const char *outputFilename)
    if (mSplitDsq)
    {
       // write each sequence into the datablock
-      for (int i = 0; i < mSequences.size(); i++)
+      for (int i = 0; i < (int)mSequences.size(); i++)
       {
          // skip 'Sequence::' identifier at start of name
          const char *seqName = strrchr(mSequences[i]->getName(), ':');
@@ -1749,12 +1749,12 @@ void Ms2dtsExporterPlus::exportDone()
    }
 
    // clear lists
-   for (int i = 0; i < mSequences.size(); i++)
+   for (int i = 0; i < (int)mSequences.size(); i++)
       delete mSequences[i];
-   for (i = 0; i < mDeletedSequences.size(); i++)
+   for (int i = 0; i < (int)mDeletedSequences.size(); i++)
       delete mDeletedSequences[i];
    // mesh objects are deleted during export
-   for (i = 0; i < mMaterials.size(); i++)
+   for (int i = 0; i < (int)mMaterials.size(); i++)
       delete mMaterials[i];
 
    mDeletedSequences.clear();
@@ -1886,7 +1886,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
    //--------------------------------------------------------------------------
    // setup bone indices for all meshes now that the Root bone is guaranteed to
    // exist
-   for (int i = 0; i < mMeshes.size(); i++)
+   for (int i = 0; i < (int)mMeshes.size(); i++)
       mMeshes[i]->setBoneIndices();
 
    //--------------------------------------------------------------------------
@@ -1914,7 +1914,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
          *p++ = '_';
          *p = '.';
 
-         for (int i = 0; i < mSequences.size(); i++)
+         for (int i = 0; i < (int)mSequences.size(); i++)
          {
             // skip 'Sequence::' identifier at start of name
             const char *seqName = strrchr(mSequences[i]->getName(), ':');
@@ -1971,7 +1971,7 @@ int Ms2dtsExporterPlus::Execute(msModel *model)
       char *destFilename = exportDir + strlen(exportDir);
 
       // copy all texture files to the export directory
-      for (int i = 0; i < mMaterials.size(); i++)
+      for (int i = 0; i < (int)mMaterials.size(); i++)
       {
          if (mMaterials[i]->mRefCount == 0)
             continue;

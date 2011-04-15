@@ -57,7 +57,7 @@ namespace DTS
       for (int i = 0; i < numBones; i++)
          tempBones.push_back(new MilkshapeBone(i));
 
-      for (i = 0; i < numBones; i++)
+      for (int i = 0; i < numBones; i++)
       {
          // find parent bone
          char boneName[MS_MAX_NAME+1];
@@ -67,7 +67,7 @@ namespace DTS
 
          if (parent >= 0)
          {
-            assert(parent < tempBones.size() && "Invalid parent bone index");
+            assert(parent < (int)tempBones.size() && "Invalid parent bone index");
             tempBones[parent]->addChildNode(tempBones[i]);
          }
          else
@@ -75,7 +75,7 @@ namespace DTS
       }
 
       // add meshes
-      for (i = 0; i < mExporter->mMeshes.size(); i++)
+      for (int i = 0; i < (int)mExporter->mMeshes.size(); i++)
       {
          MilkshapeNode *mesh = mExporter->mMeshes[i];
 
@@ -187,7 +187,7 @@ namespace DTS
       }
 
       // add sequences
-      for (i = 0; i < mExporter->mSequences.size(); i++)
+      for (int i = 0; i < (int)mExporter->mSequences.size(); i++)
       {
          // sequence properties are extracted from name
          MilkshapeNode *seq = mExporter->mSequences[i];

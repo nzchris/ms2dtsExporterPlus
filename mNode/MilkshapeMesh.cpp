@@ -123,7 +123,7 @@ void MilkshapeMesh::setBoneIndices()
       else
       {
          // get attached bones
-         for (k = 0; k < MS_BONES_PER_VERTEX_EX; k++)
+         for (int k = 0; k < MS_BONES_PER_VERTEX_EX; k++)
          {
             S32 boneIndex = indices[k];
             if (boneIndex < 0)
@@ -231,7 +231,8 @@ F32 MilkshapeMesh::getVisibility(S32 frame) const
       // either side
       float a1,a2,dt;
 
-      for (int idx = 1; idx < numFrames; idx++)
+      int idx;
+      for (idx = 1; idx < numFrames; idx++)
          if (visFrames[idx] > frame)
             break;
 

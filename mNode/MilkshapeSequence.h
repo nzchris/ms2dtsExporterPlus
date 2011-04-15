@@ -84,7 +84,7 @@ public:
    /// @return A pointer to the milkshape material (NULL if index is bad)
    msMaterial *getMsMaterial() const
    {
-      if (mSeqIndex < msModel_GetMaterialCount(mModel))
+      if ((int)mSeqIndex < msModel_GetMaterialCount(mModel))
          return msModel_GetMaterialAt(mModel, mSeqIndex);
       else
          return NULL;

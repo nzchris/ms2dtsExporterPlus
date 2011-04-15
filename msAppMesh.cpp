@@ -63,7 +63,7 @@ namespace DTS
    {
       assert(!mLocked && "Mesh is locked");
 
-      S32 frame = (time.getF32() * AppConfig::AppFramesPerSec() + 0.5);
+      S32 frame = (S32)(time.getF32() * AppConfig::AppFramesPerSec() + 0.5);
       return mMsNode->getMeshTransform(frame);
    }
 
@@ -71,7 +71,7 @@ namespace DTS
    {
       assert(!mLocked && "Mesh is locked");
 
-      S32 frame = (time.getF32() * AppConfig::AppFramesPerSec() + 0.5f);
+      S32 frame = (S32)(time.getF32() * AppConfig::AppFramesPerSec() + 0.5f);
       return mMsNode->getVisibility(frame);
    }
 
@@ -182,12 +182,12 @@ namespace DTS
 
 				// if this is an ifl, then create the ifl material if it doesn't
 				// exist and mark as ifl
-				char *dot = strchr(mat.name.data(),'_');
+				char *dot = strchr(const_cast<char*>(mat.name.data()),'_');
 				if (dot && !stricmp(dot+1,"ifl"))
 				{
 					*dot = '.';
 					mat.flags |= Material::IFLMaterial;
-					while (mIfls.size() <= matIdx)
+					while ((int)mIfls.size() <= matIdx)
 						mIfls.push_back(NULL);
 					if (!mIfls[matIdx])
 						mIfls[matIdx] = new AppIfl(mat.name.c_str());
@@ -242,7 +242,7 @@ namespace DTS
          verts[i] = objectOffset * (getVert(mesh, i) * mMsNode->getScale());
 
       int numTriangles = mFaces.size();
-      for (i = 0; i < numTriangles; i++)
+      for (int i = 0; i < numTriangles; i++)
       {
          msTriangle *msFace = msMesh_GetTriangleAt(mesh, i);
          Primitive &tsFace = mFaces[i];
@@ -341,7 +341,7 @@ namespace DTS
       // reset all weights to zero
       S32 numPoints = msMesh_GetVertexCount(mMsNode->getMsMesh());
       mWeights.resize(numBones);
-      for (i = 0; i < mWeights.size(); i++)
+      for (int i = 0; i < (int)mWeights.size(); i++)
       {
          mWeights[i] = new std::vector<F32>;
          mWeights[i]->resize(numPoints);
@@ -422,7 +422,8 @@ namespace DTS
    void MsAppMesh::addBoneWeight(S32 vertIndex, S32 boneIndex, F32 weight)
    {
       // find bone
-      for (int i = 0; i < mMsNode->mBoneIndices.size(); i++)
+      int i;
+      for (i = 0; i < (int)mMsNode->mBoneIndices.size(); i++)
          if (boneIndex == mMsNode->mBoneIndices[i])
             break;
 

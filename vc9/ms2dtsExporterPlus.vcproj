@@ -212,11 +212,11 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			Name="mNode"
+			Filter="cpp;h"
 			>
 			<File
-				RelativePath="..\DllEntry.cpp"
+				RelativePath="..\mNode\MilkshapeBone.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -241,11 +241,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\ms2dtsExporter.def"
+				RelativePath="..\mNode\MilkshapeBone.h"
 				>
 			</File>
 			<File
-				RelativePath="..\ms2dtsExporterPlus.cpp"
+				RelativePath="..\mNode\MilkshapeMaterial.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -270,7 +270,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\msAppMesh.cpp"
+				RelativePath="..\mNode\MilkshapeMaterial.h"
+				>
+			</File>
+			<File
+				RelativePath="..\mNode\MilkshapeMesh.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -295,7 +299,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\msAppNode.cpp"
+				RelativePath="..\mNode\MilkshapeMesh.h"
+				>
+			</File>
+			<File
+				RelativePath="..\mNode\MilkshapeNode.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -320,7 +328,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\msConfig.cpp"
+				RelativePath="..\mNode\MilkshapeNode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\mNode\MilkshapeSequence.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -345,201 +357,14 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\msSceneEnum.cpp"
+				RelativePath="..\mNode\MilkshapeSequence.h"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-					/>
-				</FileConfiguration>
 			</File>
-			<Filter
-				Name="mNode"
-				Filter="cpp;h"
-				>
-				<File
-					RelativePath="..\mNode\MilkshapeBone.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-							BasicRuntimeChecks="3"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeBone.h"
-					>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeMaterial.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-							BasicRuntimeChecks="3"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeMaterial.h"
-					>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeMesh.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-							BasicRuntimeChecks="3"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeMesh.h"
-					>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeNode.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-							BasicRuntimeChecks="3"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeNode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeSequence.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-							BasicRuntimeChecks="3"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\mNode\MilkshapeSequence.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
-			Name="Header Files"
+			Name="msLib"
 			Filter="h;hpp;hxx;hm;inl"
 			>
-			<File
-				RelativePath="..\ms2dtsExporterPlus.h"
-				>
-			</File>
-			<File
-				RelativePath="..\msAppMesh.h"
-				>
-			</File>
-			<File
-				RelativePath="..\msAppNode.h"
-				>
-			</File>
-			<File
-				RelativePath="..\msConfig.h"
-				>
-			</File>
 			<File
 				RelativePath="..\msLIB\msLib.h"
 				>
@@ -548,38 +373,203 @@
 				RelativePath="..\msLIB\msPlugIn.h"
 				>
 			</File>
-			<File
-				RelativePath="..\msSceneEnum.h"
-				>
-			</File>
 		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+		<File
+			RelativePath="..\DllEntry.cpp"
 			>
-			<File
-				RelativePath="..\ms2dtsExporterPlus.rc"
+			<FileConfiguration
+				Name="Debug|Win32"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						PreprocessorDefinitions=""
-						AdditionalIncludeDirectories="\Stuff\ms2dtsExporterPlus"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						PreprocessorDefinitions=""
-						AdditionalIncludeDirectories="\Stuff\ms2dtsExporterPlus"
-					/>
-				</FileConfiguration>
-			</File>
-		</Filter>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\ms2dtsExporter.def"
+			>
+		</File>
+		<File
+			RelativePath="..\ms2dtsExporterPlus.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\ms2dtsExporterPlus.h"
+			>
+		</File>
+		<File
+			RelativePath="..\ms2dtsExporterPlus.rc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					PreprocessorDefinitions=""
+					AdditionalIncludeDirectories="\Stuff\ms2dtsExporterPlus"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					PreprocessorDefinitions=""
+					AdditionalIncludeDirectories="\Stuff\ms2dtsExporterPlus"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\msAppMesh.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\msAppMesh.h"
+			>
+		</File>
+		<File
+			RelativePath="..\msAppNode.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\msAppNode.h"
+			>
+		</File>
+		<File
+			RelativePath="..\msConfig.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\msConfig.h"
+			>
+		</File>
+		<File
+			RelativePath="..\msSceneEnum.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;MS2DTSEXPORTERPLUS_EXPORTS;$(NoInherit)"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\msSceneEnum.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -123,7 +123,7 @@ F32 CopyFromUserPropFloat(MilkshapeNode *node, const char *propName, HWND hDlg, 
 /// Functions to copy from a dialog control to a MilkshapeNode user property
 S32 CopyToUserPropInt(MilkshapeNode *node, const char *propName, HWND hDlg, int nIDDlgItem)
 {
-   S32 value = ::GetDlgItemInt(hDlg, nIDDlgItem, NULL, FALSE);
+   S32 value = ::GetDlgItemInt(hDlg, nIDDlgItem, NULL, TRUE);
    node->setUserPropInt(propName, value);
    return value;
 }
